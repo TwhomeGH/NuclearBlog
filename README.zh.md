@@ -124,7 +124,7 @@
    ```
 
 3. **配置博客：**
-   - 编辑 `@config.ts` 自定义博客设置
+   - 编辑 `src/config.ts` 自定义博客设置
    - 更新站点信息、主题色彩、横幅图片和社交链接
    - 配置特色页面功能
    - (可选) 配置内容仓库分离 - 见 [内容仓库配置](#-代码内容分离可选)
@@ -138,9 +138,9 @@
 ### 📝 内容管理
 
 - **创建新文章：** `pnpm new-post <文件名>`
-- **编辑文章：** 修改 `@content/posts/` 中的文件
-- **自定义页面：** 编辑 `@content/spec/` 中的特殊页面
-- **添加图片：** 将图片放在 `@assets/` 或 `public/` 中
+- **编辑文章：** 修改 `src/content/posts/` 中的文件
+- **自定义页面：** 编辑 `src/content/spec/` 中的特殊页面
+- **添加图片：** 将图片放在 `src/assets/` 或 `public/` 中
 
 ### 🚀 部署
 
@@ -153,7 +153,7 @@
 
 - **环境变量配置（可选）：** 可参照 `.env.example` 来配置
 
-部署前，请在 `@config.ts` 中更新 `siteURL`。
+部署前，请在 `src/config.ts` 中更新 `siteURL`。
 **不建议**将 `.env` 文件提交到 Git，`.env` 应该仅在本地调试或构建使用。若要将项目在云平台部署，建议通过平台上的 `环境变量` 配置传入。
 
 ## 📝 文章前言格式
@@ -211,7 +211,7 @@ comment: false # 禁用评论
 ```
 
 **注意：**
-此功能需要先在 `@config.ts` 中启用评论系统。
+此功能需要先在 `src/config.ts` 中启用评论系统。
 
 ## 🧩 Markdown 扩展语法
 
@@ -253,7 +253,7 @@ Mizuki 支持超越标准 GitHub Flavored Markdown 的增强功能：
 
 ### 🔧 基础配置
 
-编辑 `@config.ts` 自定义您的博客：
+编辑 `src/config.ts` 自定义您的博客：
 
 ```typescript
 export const siteConfig: SiteConfig = {
@@ -277,10 +277,10 @@ export const siteConfig: SiteConfig = {
 
 ### 📱 特色页面配置
 
-- **追番页面：** 在 `@pages/anime.astro` 中编辑动画列表
-- **友链页面：** 在 `@content/spec/friends.md` 中编辑朋友数据
-- **日记页面：** 在 `@pages/diary.astro` 中编辑动态
-- **关于页面：** 在 `@content/spec/about.md` 中编辑内容
+- **追番页面：** 在 `src/pages/anime.astro` 中编辑动画列表
+- **友链页面：** 在 `src/content/spec/friends.md` 中编辑朋友数据
+- **日记页面：** 在 `src/pages/diary.astro` 中编辑动态
+- **关于页面：** 在 `src/content/spec/about.md` 中编辑内容
 
 ### 📦 代码内容分离 (可选)
 

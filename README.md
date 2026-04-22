@@ -123,7 +123,7 @@ Get started quickly with our comprehensive documentation. Whether you're customi
    ```
 
 3. **Configure your blog:**
-   - Edit `@config.ts` to customize blog settings
+   - Edit `src/config.ts` to customize blog settings
    - Update site information, theme colors, banner images, and social links
    - Configure feature page functionality
 
@@ -136,9 +136,9 @@ Get started quickly with our comprehensive documentation. Whether you're customi
 ### 📝 Content Management
 
 - **Create new posts:** `pnpm new-post <filename>`
-- **Edit posts:** Modify files in `@content/posts/`
-- **Customize special pages:** Edit files in `@content/spec/`
-- **Add images:** Place images in `@assets/` or `public/`
+- **Edit posts:** Modify files in `src/content/posts/`
+- **Customize special pages:** Edit files in `src/content/spec/`
+- **Add images:** Place images in `src/assets/` or `public/`
 
 ### 🚀 Deployment
 
@@ -151,7 +151,7 @@ Deploy your blog to any static hosting platform:
 
 - **Environment Variable Configuration (Optional):** Refer to `.env.example` for configuration
 
-Before deployment, update the `siteURL` in `@config.ts`.
+Before deployment, update the `siteURL` in `src/config.ts`.
 **Not recommended** to commit the `.env` file to Git. The `.env` file should only be used for local debugging or building. For cloud platform deployment, it's recommended to configure via the platform's `environment variables` settings.
 
 ## 📝 Post Frontmatter Format
@@ -209,7 +209,7 @@ comment: false # Disable comments
 ```
 
 **Note:**
-This feature requires the comment system to be enabled in `@config.ts` first.
+This feature requires the comment system to be enabled in `src/config.ts` first.
 
 ## 🧩 Markdown Extensions
 
@@ -251,7 +251,7 @@ All commands are run from the project root:
 
 ### 🔧 Basic Configuration
 
-Edit `@config.ts` to customize your blog:
+Edit `src/config.ts` to customize your blog:
 
 ```typescript
 export const siteConfig: SiteConfig = {
@@ -275,10 +275,10 @@ export const siteConfig: SiteConfig = {
 
 ### 📱 Feature Page Configuration
 
-- **Anime Page:** Edit anime list in `@pages/anime.astro`
-- **Friends Page:** Edit friend data in `@content/spec/friends.md`
-- **Diary Page:** Edit moments in `@pages/diary.astro`
-- **About Page:** Edit content in `@content/spec/about.md`
+- **Anime Page:** Edit anime list in `src/pages/anime.astro`
+- **Friends Page:** Edit friend data in `src/content/spec/friends.md`
+- **Diary Page:** Edit moments in `src/pages/diary.astro`
+- **About Page:** Edit content in `src/content/spec/about.md`
 
 ### 📦 Code-Content Separation (Optional)
 

@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 
 // 读取配置文件获取语言设置和字体配置
 async function getConfig() {
-	const configPath = path.join(__dirname, "../@config.ts");
+	const configPath = path.join(__dirname, "../src/config.ts");
 	const configContent = fs.readFileSync(configPath, "utf-8");
 
 	// 提取语言设置
@@ -36,17 +36,13 @@ async function getConfig() {
 			const fontConfig = match[1];
 
 			// 提取 enableCompress
-			const compressMatch = fontConfig.match(
-				/enableCompress:\s*(true|false)/,
-			);
+			const compressMatch = fontConfig.match(/enableCompress:\s*(true|false)/);
 			const enableCompress = compressMatch
 				? compressMatch[1] === "true"
 				: false;
 
 			// 提取 localFonts 数组
-			const localFontsMatch = fontConfig.match(
-				/localFonts:\s*\[(.*?)\]/s,
-			);
+			const localFontsMatch = fontConfig.match(/localFonts:\s*\[(.*?)\]/s);
 			let localFonts = [];
 
 			if (localFontsMatch?.[1].trim()) {
@@ -102,9 +98,7 @@ function extractText(content, ext) {
 
 			// 提取 frontmatter 中的字符串值（包括有引号和无引号的）
 			// 匹配 key: value 格式（无引号）
-			const unquotedMatches = frontmatter.match(
-				/^\s*\w+:\s*([^'"\n]+)$/gm,
-			);
+			const unquotedMatches = frontmatter.match(/^\s*\w+:\s*([^'"\n]+)$/gm);
 			if (unquotedMatches) {
 				unquotedMatches.forEach((match) => {
 					const value = match.replace(/^\s*\w+:\s*/, "").trim();
@@ -195,7 +189,7 @@ function getAsciiCharset() {
 async function fetchMetingPlaylistText() {
 	try {
 		// 读取配置文件获取音乐播放器配置
-		const configPath = path.join(__dirname, "../@config.ts");
+		const configPath = path.join(__dirname, "../src/config.ts");
 		const configContent = fs.readFileSync(configPath, "utf-8");
 
 		// 检查音乐播放器是否启用
@@ -285,9 +279,7 @@ async function fetchMetingPlaylistText() {
 			clearTimeout(timeoutId);
 
 			if (!response.ok) {
-				throw new Error(
-					`HTTP ${response.status}: ${response.statusText}`,
-				);
+				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 			}
 
 			const playlist = await response.json();
@@ -351,7 +343,7 @@ async function fetchMetingPlaylistText() {
 async function fetchBilibiliAnimeText() {
 	try {
 		// 读取配置文件获取番剧配置
-		const configPath = path.join(__dirname, "../@config.ts");
+		const configPath = path.join(__dirname, "../src/config.ts");
 		const configContent = fs.readFileSync(configPath, "utf-8");
 
 		// 检查番剧页面是否启用
@@ -383,10 +375,7 @@ async function fetchBilibiliAnimeText() {
 		}
 
 		// 读取 bilibili-data.json 文件
-		const dataFilePath = path.join(
-			__dirname,
-			"../@data/bilibili-data.json",
-		);
+		const dataFilePath = path.join(__dirname, "../src/data/bilibili-data.json");
 		if (!fs.existsSync(dataFilePath)) {
 			console.log(
 				"ℹ Bilibili data file not found, skipping Bilibili text collection",
@@ -401,9 +390,7 @@ async function fetchBilibiliAnimeText() {
 		const animeList = JSON.parse(fileContent);
 
 		if (!Array.isArray(animeList)) {
-			console.log(
-				"⚠ Bilibili data is not an array, skipping text collection",
-			);
+			console.log("⚠ Bilibili data is not an array, skipping text collection");
 			return new Set();
 		}
 
@@ -478,7 +465,7 @@ async function fetchBilibiliAnimeText() {
 async function fetchBangumiAnimeText() {
 	try {
 		// 读取配置文件获取番剧配置
-		const configPath = path.join(__dirname, "../@config.ts");
+		const configPath = path.join(__dirname, "../src/config.ts");
 		const configContent = fs.readFileSync(configPath, "utf-8");
 
 		// 检查番剧页面是否启用
@@ -533,10 +520,7 @@ async function fetchBangumiAnimeText() {
 
 				while (hasMore) {
 					const controller = new AbortController();
-					const timeoutId = setTimeout(
-						() => controller.abort(),
-						10000,
-					);
+					const timeoutId = setTimeout(() => controller.abort(), 10000);
 
 					const response = await fetch(
 						`${BANGUMI_API_BASE}/v0/users/${userId}/collections?subject_type=${subjectType}&type=${type}&limit=${limit}&offset=${offset}`,
@@ -551,9 +535,7 @@ async function fetchBangumiAnimeText() {
 					clearTimeout(timeoutId);
 
 					if (!response.ok) {
-						throw new Error(
-							`HTTP ${response.status}: ${response.statusText}`,
-						);
+						throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 					}
 
 					const data = await response.json();
@@ -704,8 +686,8 @@ async function collectText() {
 
 	const textSet = new Set();
 
-	// 1. 读取 @data 目录
-	const dataDir = path.join(__dirname, "../@data");
+	// 1. 读取 src/data 目录
+	const dataDir = path.join(__dirname, "../src/data");
 	const dataFiles = readFilesRecursively(dataDir);
 
 	dataFiles.forEach((file) => {
@@ -764,8 +746,8 @@ async function collectText() {
 		}
 	});
 
-	// 2. 读取 @config.ts 文件
-	const configFile = path.join(__dirname, "../@config.ts");
+	// 2. 读取 src/config.ts 文件
+	const configFile = path.join(__dirname, "../src/config.ts");
 	if (fs.existsSync(configFile)) {
 		const content = fs.readFileSync(configFile, "utf-8");
 
@@ -823,7 +805,7 @@ async function collectText() {
 	}
 
 	// 3. 读取对应语言的 i18n 文件
-	const i18nFile = path.join(__dirname, `../@i18n/languages/${lang}.ts`);
+	const i18nFile = path.join(__dirname, `../src/i18n/languages/${lang}.ts`);
 	if (fs.existsSync(i18nFile)) {
 		const content = fs.readFileSync(i18nFile, "utf-8");
 
@@ -883,8 +865,8 @@ async function collectText() {
 			`ℹ Using external content directory: ${process.env.CONTENT_DIR}`,
 		);
 	} else {
-		// 使用默认的 @content 目录
-		contentDir = path.join(__dirname, "../@content");
+		// 使用默认的 src/content 目录
+		contentDir = path.join(__dirname, "../src/content");
 	}
 
 	// 检查目录是否存在
@@ -1030,16 +1012,12 @@ async function compressFonts() {
 			const text = fontConfig.type === "asciiFont" ? asciiText : cjkText;
 
 			for (const fontFile of fontConfig.files) {
-				const fontSrc = path.join(
-					__dirname,
-					"../public/assets/font",
-					fontFile,
-				);
+				const fontSrc = path.join(__dirname, "../public/assets/font", fontFile);
 				const ext = path.extname(fontFile).toLowerCase();
 				const baseName = path.basename(fontFile, ext);
 
 				if (!fs.existsSync(fontSrc)) {
-					const errorMsg = `❌ Config error [${fontConfig.type}]: Font file does not exist   In config: "${fontFile}"\n   Expected path: public/assets/font/${fontFile}\n   \n   Please check:\n   1. Is the filename correct (case sensitive)?\n   2. Is the file in public/assets/font/?\n   3. Is ${fontConfig.type}.localFonts in @config.ts correct?`;
+					const errorMsg = `❌ Config error [${fontConfig.type}]: Font file does not exist   In config: "${fontFile}"\n   Expected path: public/assets/font/${fontFile}\n   \n   Please check:\n   1. Is the filename correct (case sensitive)?\n   2. Is the file in public/assets/font/?\n   3. Is ${fontConfig.type}.localFonts in src/config.ts correct?`;
 
 					errors.push(errorMsg);
 					console.log(`\n${errorMsg}\n`);
@@ -1052,9 +1030,7 @@ async function compressFonts() {
 				// 根据文件类型决定处理方式
 				if (ext === ".woff2" || ext === ".woff") {
 					// woff/woff2 已经是 Web 优化格式，不支持进一步子集化压缩
-					console.log(
-						`⚠ Skipping ${fontFile} (already web-optimized format)`,
-					);
+					console.log(`⚠ Skipping ${fontFile} (already web-optimized format)`);
 
 					// 直接复制到 dist
 					const destFile = path.join(distFontDir, fontFile);
@@ -1091,10 +1067,7 @@ async function compressFonts() {
 					});
 
 					// 检查压缩结果
-					const compressedFile = path.join(
-						distFontDir,
-						`${baseName}.woff2`,
-					);
+					const compressedFile = path.join(distFontDir, `${baseName}.woff2`);
 
 					if (fs.existsSync(compressedFile)) {
 						const compressedSize = fs.statSync(compressedFile).size;
@@ -1110,9 +1083,7 @@ async function compressFonts() {
 						processedCount++;
 					}
 				} else {
-					console.log(
-						`⚠ Unsupported font format, skipping: ${fontFile}`,
-					);
+					console.log(`⚠ Unsupported font format, skipping: ${fontFile}`);
 				}
 			}
 		}

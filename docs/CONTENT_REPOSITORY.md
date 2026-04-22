@@ -53,9 +53,9 @@ echo "# Mizuki 博客内容" > README.md
 cd /path/to/Mizuki
 
 # 复制内容到新仓库
-cp -r @content/posts/* /path/to/Mizuki-Content/posts/
-cp -r @content/spec/* /path/to/Mizuki-Content/spec/
-cp -r @data/* /path/to/Mizuki-Content/data/
+cp -r src/content/posts/* /path/to/Mizuki-Content/posts/
+cp -r src/content/spec/* /path/to/Mizuki-Content/spec/
+cp -r src/data/* /path/to/Mizuki-Content/data/
 cp -r public/images/* /path/to/Mizuki-Content/images/
 ```
 

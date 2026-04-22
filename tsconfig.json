@@ -14,14 +14,14 @@
 			}
 		],
 		"paths": {
-			"@components/*": ["./@components/*"],
-			"@assets/*": ["./@assets/*"],
-			"@constants/*": ["./@constants/*"],
-			"@utils/*": ["./@utils/*"],
-			"@i18n/*": ["./@i18n/*"],
-			"@layouts/*": ["./@layouts/*"],
-			"@/*": ["./@*"]
+			"@components/*": ["./src/components/*"],
+			"@assets/*": ["./src/assets/*"],
+			"@constants/*": ["./src/constants/*"],
+			"@utils/*": ["./src/utils/*"],
+			"@i18n/*": ["./src/i18n/*"],
+			"@layouts/*": ["./src/layouts/*"],
+			"@/*": ["./src/*"]
 		}
 	},
-	"include": ["@**/*"]
+	"include": ["src/**/*"]
 }

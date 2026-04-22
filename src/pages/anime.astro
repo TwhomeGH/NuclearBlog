@@ -87,7 +87,7 @@ const sourceConfigs: Record<string, AnimeSourceConfig> = {
 };
 
 function loadAnimeData(filename: string): AnimeItem[] {
-	const dataPath = path.join(process.cwd(), `@data/${filename}`);
+	const dataPath = path.join(process.cwd(), `src/data/${filename}`);
 
 	if (!fs.existsSync(dataPath)) {
 		console.warn(`[Anime] Data file not found: ${dataPath}`);

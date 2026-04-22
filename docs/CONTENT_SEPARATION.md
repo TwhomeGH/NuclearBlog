@@ -32,7 +32,7 @@ pnpm install
 pnpm dev
 ```
 
-内容存放在 `@content/` 和 `public/images/` 目录,与代码一起管理。
+内容存放在 `src/content/` 和 `public/images/` 目录,与代码一起管理。
 
 ### 进阶: 启用内容分离
 
@@ -95,7 +95,7 @@ ENABLE_CONTENT_SYNC=false
 
 **工作流程**:
 ```bash
-# 直接编辑 @content/ 下的文章
+# 直接编辑 src/content/ 下的文章
 pnpm dev
 
 # 提交时一起提交代码和内容
