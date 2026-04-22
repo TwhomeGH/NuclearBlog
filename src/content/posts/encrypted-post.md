@@ -3,7 +3,6 @@ title: Encrypted Post
 published: 2024-01-15
 description: This is an article for testing the page encryption feature
 encrypted: true
-pinned: true
 password: "123456"
 alias: "encrypted-example"
 tags: ["Test", "Encryption"]

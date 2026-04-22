@@ -19,11 +19,11 @@ import { LinkPreset } from "./types/config";
 // 移除i18n导入以避免循环依赖
 
 // 定义站点语言
-const SITE_LANG = "zh_CN"; // 语言代码，例如：'en', 'zh_CN', 'ja' 等。
+const SITE_LANG = "zh_TW"; // 语言代码，例如：'en', 'zh_CN', 'ja' 等。
 const SITE_TIMEZONE = 8; //设置你的网站时区 from -12 to 12 default in UTC+8
 export const siteConfig: SiteConfig = {
 	title: "Mizuki",
-	subtitle: "One demo website",
+	subtitle: "核音另外架的博客站點",
 	siteURL: "https://nuclearblog.pages.dev", // 请替换为你的站点URL，以斜杠结尾
 	siteStartDate: "2026-02-20", // 站点开始运行日期，用于站点统计组件计算运行天数
 
@@ -250,7 +250,7 @@ export const fullscreenWallpaperConfig: FullscreenWallpaperConfig = {
 	position: "center", // 壁纸位置，等同于 object-position
 	carousel: {
 		enable: true, // 启用轮播
-		interval: 5, // 轮播间隔时间（秒）
+		interval: 15, // 轮播间隔时间（秒）
 	},
 	zIndex: -1, // 层级，确保壁纸在背景层
 	opacity: 0.8, // 壁纸透明度
@@ -269,21 +269,21 @@ export const navBarConfig: NavBarConfig = {
 			children: [
 				{
 					name: "GitHub",
-					url: "https://github.com/matsuzaka-yuki/Mizuki",
+					url: "https://github.com/TwhomeGH/",
 					external: true,
 					icon: "fa7-brands:github",
 				},
 				{
-					name: "Bilibili",
-					url: "https://space.bilibili.com/701864046",
+					name: "Twitch",
+					url: "https://www.twitch.tv/coffeelatte0709",
 					external: true,
-					icon: "fa7-brands:bilibili",
+					icon: "mdi:twitch",
 				},
 				{
-					name: "Gitee",
-					url: "https://gitee.com/matsuzakayuki/Mizuki",
+					name: "TikTok",
+					url: "https://www.tiktok.com/@coffeelatte0709",
 					external: true,
-					icon: "mdi:git",
+					icon: "ic:baseline-tiktok",
 				},
 			],
 		},
@@ -358,38 +358,34 @@ export const navBarConfig: NavBarConfig = {
 };
 
 export const profileConfig: ProfileConfig = {
-	avatar: "assets/images/avatar.webp", // 相对于 /src 目录。如果以 '/' 开头，则相对于 /public 目录
-	name: "まつざか ゆき",
-	bio: "世界は大きい、君は行かなければならない",
+	avatar: "assets/images/IMG_2318.jpg", // 相对于 /src 目录。如果以 '/' 开头，则相对于 /public 目录
+	name: "核音",
+	bio: "大松鼠 呱呱",
 	typewriter: {
 		enable: true, // 启用个人简介打字机效果
 		speed: 80, // 打字速度（毫秒）
 	},
 	links: [
 		{
-			name: "Bilibili",
-			icon: "fa7-brands:bilibili",
-			url: "https://space.bilibili.com/701864046",
-		},
-		{
-			name: "Gitee",
-			icon: "mdi:git",
-			url: "https://gitee.com/matsuzakayuki",
-		},
-		{
 			name: "GitHub",
 			icon: "fa7-brands:github",
-			url: "https://github.com/matsuzaka-yuki",
+			url: "https://github.com/TwhomeGH",
 		},
 		{
-			name: "Codeberg",
-			icon: "simple-icons:codeberg",
-			url: "https://codeberg.org",
+			name: "Twitch",
+			icon: "mdi:twitch",
+			url: "https://www.twitch.tv/coffeelatte0709",
 		},
+		{
+			name: "TikTok",
+			icon: "ic:baseline-tiktok",
+			url: "https://www.tiktok.com/@coffeelatte0709",
+		},
+
 		{
 			name: "Discord",
 			icon: "fa7-brands:discord",
-			url: "https://discord.gg/MqW6TcQtVM",
+			url: "https://discord.com/invite/jud4UE6wuq",
 		},
 	],
 };

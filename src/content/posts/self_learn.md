@@ -2,8 +2,8 @@
 title: Self-learning 自學習插件的依賴安裝
 published: 2026-03-25
 tags: [AstrBot,Learn ]
-category: Examples
-draft: true
+category: Learn
+draft: false
 ---
 
 
