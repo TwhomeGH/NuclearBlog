@@ -57,16 +57,16 @@ MIZUKI_PATH="/path/to/your/Mizuki"
 CONTENT_PATH="/path/to/Mizuki-Content"
 
 # 复制文章
-cp -r "$MIZUKI_PATH/src/content/posts/"* "$CONTENT_PATH/posts/"
+cp -r "$MIZUKI_PATH/@content/posts/"* "$CONTENT_PATH/posts/"
 
 # 复制特殊页面
-cp -r "$MIZUKI_PATH/src/content/spec/"* "$CONTENT_PATH/spec/"
+cp -r "$MIZUKI_PATH/@content/spec/"* "$CONTENT_PATH/spec/"
 
 # 复制数据文件
-cp "$MIZUKI_PATH/src/data/anime.ts" "$CONTENT_PATH/data/" 2>/dev/null || echo "anime.ts not found"
-cp "$MIZUKI_PATH/src/data/projects.ts" "$CONTENT_PATH/data/" 2>/dev/null || echo "projects.ts not found"
-cp "$MIZUKI_PATH/src/data/skills.ts" "$CONTENT_PATH/data/" 2>/dev/null || echo "skills.ts not found"
-cp "$MIZUKI_PATH/src/data/timeline.ts" "$CONTENT_PATH/data/" 2>/dev/null || echo "timeline.ts not found"
+cp "$MIZUKI_PATH/@data/anime.ts" "$CONTENT_PATH/data/" 2>/dev/null || echo "anime.ts not found"
+cp "$MIZUKI_PATH/@data/projects.ts" "$CONTENT_PATH/data/" 2>/dev/null || echo "projects.ts not found"
+cp "$MIZUKI_PATH/@data/skills.ts" "$CONTENT_PATH/data/" 2>/dev/null || echo "skills.ts not found"
+cp "$MIZUKI_PATH/@data/timeline.ts" "$CONTENT_PATH/data/" 2>/dev/null || echo "timeline.ts not found"
 
 # 复制图片
 cp -r "$MIZUKI_PATH/public/images/albums/"* "$CONTENT_PATH/images/albums/" 2>/dev/null || echo "albums not found"
@@ -134,20 +134,20 @@ cd "$MIZUKI_PATH"
 
 # 备份原内容 (以防万一)
 mkdir -p ../mizuki-content-backup
-cp -r src/content/posts ../mizuki-content-backup/
-cp -r src/content/spec ../mizuki-content-backup/
-cp -r src/data ../mizuki-content-backup/
+cp -r @content/posts ../mizuki-content-backup/
+cp -r @content/spec ../mizuki-content-backup/
+cp -r @data ../mizuki-content-backup/
 cp -r public/images ../mizuki-content-backup/
 
 # 删除已迁移的内容 (保留目录结构)
-rm -rf src/content/posts/*
-rm -rf src/content/spec/*
-rm -f src/data/anime.ts src/data/projects.ts src/data/skills.ts src/data/timeline.ts
+rm -rf @content/posts/*
+rm -rf @content/spec/*
+rm -f @data/anime.ts @data/projects.ts @data/skills.ts @data/timeline.ts
 rm -rf public/images/albums/* public/images/diary/*
 
 # 创建 .gitkeep 文件保留目录
-touch src/content/posts/.gitkeep
-touch src/content/spec/.gitkeep
+touch @content/posts/.gitkeep
+touch @content/spec/.gitkeep
 touch public/images/albums/.gitkeep
 touch public/images/diary/.gitkeep
 

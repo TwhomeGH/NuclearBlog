@@ -36,7 +36,9 @@ if (!fs.existsSync(CONTENT_DIR)) {
 	console.log("Using independent repository mode");
 
 	if (!CONTENT_REPO_URL) {
-		console.warn("Warning: CONTENT_REPO_URL not set, will use local content");
+		console.warn(
+			"Warning: CONTENT_REPO_URL not set, will use local content",
+		);
 		console.log(
 			"Tip: Please set CONTENT_REPO_URL environment variable or manually create content directory",
 		);
@@ -75,9 +77,9 @@ if (!fs.existsSync(CONTENT_DIR)) {
 console.log("\nSetting up content links...");
 
 const contentMappings = [
-	{ src: "posts", dest: "src/content/posts" },
-	{ src: "spec", dest: "src/content/spec" },
-	{ src: "data", dest: "src/data" },
+	{ src: "posts", dest: "@content/posts" },
+	{ src: "spec", dest: "@content/spec" },
+	{ src: "data", dest: "@data" },
 	{ src: "images", dest: "public/images" },
 ];
 

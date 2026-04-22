@@ -39,11 +39,11 @@ yarn.lock
 
 cache/
 fuwari/
-src/data/myself.ts
-src/pages/myself.astro
+@data/myself.ts
+@pages/myself.astro
 
 # Bangumi generated data
-src/data/bangumi-data.json
+@data/bangumi-data.json
 
 # Bilibili generated data
-src/data/bilibili-data.json
+@data/bilibili-data.json

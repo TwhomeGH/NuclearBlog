@@ -5,11 +5,11 @@ import { fileURLToPath } from "url";
 const API_BASE = "https://api.bgm.tv";
 const CONFIG_PATH = path.join(
 	path.dirname(fileURLToPath(import.meta.url)),
-	"../src/config.ts",
+	"../@config.ts",
 );
 const OUTPUT_FILE = path.join(
 	path.dirname(fileURLToPath(import.meta.url)),
-	"../src/data/bangumi-data.json",
+	"../@data/bangumi-data.json",
 );
 
 async function getUserIdFromConfig() {
@@ -27,7 +27,7 @@ async function getUserIdFromConfig() {
 				!userId
 			) {
 				console.warn(
-					"Warning: userId in src/config.ts appears to be a default value.",
+					"Warning: userId in @config.ts appears to be a default value.",
 				);
 				return userId;
 			}

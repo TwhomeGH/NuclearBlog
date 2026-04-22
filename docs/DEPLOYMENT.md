@@ -284,7 +284,7 @@ USE_SUBMODULE=false  # ⚠️ Cloudflare Pages 默认不支持 submodule
 **工作原理**:
 1. `pnpm build` 执行前自动运行 `prebuild` 钩子
 2. 检查 `ENABLE_CONTENT_SYNC` 环境变量
-3. 如果为 `true`，从远程仓库同步内容到 `src/content/` 和 `public/images/`
+3. 如果为 `true`，从远程仓库同步内容到 `@content/` 和 `public/images/`
 4. 如果为 `false` 或未设置，跳过同步，使用本地内容
 5. `|| true` 确保同步失败不会中断构建
 

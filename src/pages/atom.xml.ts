@@ -13,7 +13,7 @@ const markdownParser = new MarkdownIt();
 
 // get dynamic import of images as a map collection
 const imagesGlob = import.meta.glob<{ default: ImageMetadata }>(
-	"/src/content/**/*.{jpeg,jpg,png,gif,webp}", // include posts and assets
+	"/@content/**/*.{jpeg,jpg,png,gif,webp}", // include posts and assets
 );
 
 export async function GET(context: APIContext) {
@@ -72,15 +72,15 @@ export async function GET(context: APIContext) {
 
 					if (postDir) {
 						// For posts in subdirectories
-						importPath = `/src/content/posts/${postDir}/${prefixRemoved}`;
+						importPath = `/@content/posts/${postDir}/${prefixRemoved}`;
 					} else {
 						// For posts directly in posts directory
-						importPath = `/src/content/posts/${prefixRemoved}`;
+						importPath = `/@content/posts/${prefixRemoved}`;
 					}
 				} else if (src.startsWith("../")) {
-					// Path like ../assets/images/xxx -> relative to /src/content/
+					// Path like ../assets/images/xxx -> relative to /@content/
 					const cleaned = src.replace(/^\.\.\//, "");
-					importPath = `/src/content/${cleaned}`;
+					importPath = `/@content/${cleaned}`;
 				} else {
 					// Handle direct filename (no ./ prefix) - assume it's in the same directory as the post
 					const postPath = post.id; // This gives us the full path like "bestimageapi/index.md"
@@ -90,10 +90,10 @@ export async function GET(context: APIContext) {
 
 					if (postDir) {
 						// For posts in subdirectories
-						importPath = `/src/content/posts/${postDir}/${src}`;
+						importPath = `/@content/posts/${postDir}/${src}`;
 					} else {
 						// For posts directly in posts directory
-						importPath = `/src/content/posts/${src}`;
+						importPath = `/@content/posts/${src}`;
 					}
 				}
 
