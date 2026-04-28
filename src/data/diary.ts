@@ -20,6 +20,11 @@ const diaryData: DiaryItem[] = [
 		date: "2025-01-15T10:30:00Z",
 		images: ["/images/diary/sakura.jpg", "/images/diary/1.jpg"],
 	},
+	{
+		id: 2,
+		content: "今天也是平凡的一天呢",
+		date: "2026-04-29T10:12:00Z",
+	},
 ];
 
 // 获取日记统计数据

@@ -16,24 +16,41 @@ export type DeviceCategory = {
 };
 
 export const devicesData: DeviceCategory = {
-	OnePlus: [
+	iPad: [
 		{
-			name: "OnePlus 13T",
-			image: "/images/device/oneplus13t.png",
-			specs: "Gray / 16G + 1TB",
-			description:
-				"Flagship performance, Hasselblad imaging, 80W SuperVOOC.",
-			link: "https://www.oneplus.com/cn/13t",
+			name: "iPad 10代 (2022年)",
+			image: "/images/device/iPad10.png",
+			specs: "藍色 / 4G + 256GB",
+			description: "可愛，可畫，可圈可點.",
+			link: "https://www.apple.com/tw/ipad/",
 		},
 	],
-	Router: [
+	MacBook_Pro: [
 		{
-			name: "GL-MT3000",
-			image: "/images/device/mt3000.png",
-			specs: "1000Mbps / 2.5G",
+			name: "MacBook Pro (Retina, 13 英吋 , 2014 年中)",
+			image: "/images/device/MacbookPro2014.png",
+			specs: "i5 2.6GHz / 8G + 512GB",
 			description:
-				"Portable WiFi 6 router suitable for business trips and home use.",
-			link: "https://www.gl-inet.cn/products/gl-mt3000/",
+				"二手買的 應該是改過接口 讓NVME 512GB能用 目前比較可惜是螢幕部分顯示異常.",
+			link: "https://support.apple.com/zh-tw/111942",
+		},
+	],
+	Redmi: [
+		{
+			name: "Redmi 12C",
+			image: "/images/device/Redmi-12C.webp",
+			specs: "MediaTek Helio G85 8 Core 2.0GHz / 4G + 64GB",
+			description: "手機 平時用來看直播間情況用.",
+			link: "https://www.mi.com/tw/product/redmi-12c/",
+		},
+	],
+	PC: [
+		{
+			name: "Windows 11 桌機",
+			image: "/images/device/B450M.webp",
+			specs: "AMD Ryzen R5 5500GT 3.6GHz / 64G + 500GB",
+			description: "主要桌機 用於處理回放加工 或其他服務器搭建.",
+			link: "https://www.gigabyte.com/tw/Motherboard/B450M-GAMING-rev-1x",
 		},
 	],
 };
