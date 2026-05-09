@@ -4,71 +4,64 @@ export function rehypeImageWidth() {
 	const regexW = / w-([0-9]+)(%|px)?/;
 	const regexH = / h-([0-9]+)(%|px)?/;
 
+	const processImg = (imgNode) => {
+		const alt = imgNode.properties.alt || "";
+		const matchW = alt.match(regexW);
+		const matchH = alt.match(regexH);
+
+		let width = "100%";
+		let height = "auto";
+
+		if (matchW) {
+			width = matchW[2] ? `${matchW[1]}${matchW[2]}` : `${matchW[1]}%`;
+		}
+		if (matchH) {
+			height = matchH[2] ? `${matchH[1]}${matchH[2]}` : `${matchH[1]}%`;
+		}
+
+		imgNode.properties.alt = alt
+			.replace(regexW, "")
+			.replace(regexH, "")
+			.trim();
+
+		imgNode.properties.style = `display:block; margin:0 auto; width:${width}; height:${height}; object-fit:contain;`;
+
+		return {
+			type: "element",
+			tagName: "figure",
+			properties: { style: "margin:1em 0; flex:1;" },
+			children: [imgNode],
+		};
+	};
+
 	return (tree) => {
 		visit(tree, "element", (node, index, parent) => {
-			if (
-				node.tagName === "img" &&
-				node.properties &&
-				node.properties.alt
-			) {
-				const alt = node.properties.alt;
+			// 如果 <p> 裡有多個 <img>
+			if (node.tagName === "p") {
+				const imgChildren = node.children.filter(
+					(child) => child.tagName === "img",
+				);
 
-				const matchW = alt.match(regexW);
-				const matchH = alt.match(regexH);
+				if (imgChildren.length > 1) {
+					const figures = imgChildren.map(processImg);
 
-				let width = "100%";
-				let height = "auto";
-
-				if (matchW) {
-					width = matchW[2]
-						? `${matchW[1]}${matchW[2]}`
-						: `${matchW[1]}%`;
-				}
-				if (matchH) {
-					height = matchH[2]
-						? `${matchH[1]}${matchH[2]}`
-						: `${matchH[1]}%`;
-				}
-
-				// 清理 alt 裡的語法
-				node.properties.alt = alt
-					.replace(regexW, "")
-					.replace(regexH, "")
-					.trim();
-
-				// 套用寬高
-				node.properties.style = `display:block; margin:0 auto; width:${width}; height:${height};object-fit:contain;`;
-
-				const figureChildren = [node];
-
-				if (node.properties.title) {
-					const figcaption = {
+					const flexWrapper = {
 						type: "element",
-						tagName: "figcaption",
+						tagName: "div",
 						properties: {
-							style: "text-align:center; margin-top:0.5em; font-size:0.9em; color:#666;",
+							style: "display:flex; justify-content:center; gap:1em; margin:1em 0; flex-wrap:wrap;",
 						},
-						children: [
-							{
-								type: "text",
-								value: node.properties.title,
-							},
-						],
+						children: figures,
 					};
-					figureChildren.push(figcaption);
-				}
 
-				const figure = {
-					type: "element",
-					tagName: "figure",
-					properties: {
-						style: "margin:1em 0;",
-					},
-					children: figureChildren,
-				};
-
-				if (parent && index !== undefined) {
-					parent.children[index] = figure;
+					parent.children[index] = flexWrapper;
+				} else if (
+					imgChildren.length === 1 &&
+					node.children.length === 1 &&
+					node.children[0].tagName === "img"
+				) {
+					// 單張圖片 → figure
+					parent.children[index] = processImg(node.children[0]);
 				}
 			}
 		});
