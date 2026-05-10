@@ -1,7 +1,7 @@
 ---
 title: OpenParsec 的 Metal渲染處理
 published: 2026-05-11
-description: "How to use this blog template."
+description: "Metal渲染的實現."
 image: "./Metal.png"
 tags: ["Learn", "Metal", "OpenParsec","Swift"]
 category: Learn
