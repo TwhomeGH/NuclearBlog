@@ -5,7 +5,9 @@
 
 你能以以下方式插入視頻
 
+```
 :::video[Demo Clip]{ src="https://coffee3322.ccwu.cc/api/s/xf1q1s/VID_20260505_212018.mp4" controls=true autoplay=false width="100%" height="468px" muted=true}
+```
 
 > [!TIP]
 > 注意請確保他所有參數在同一行 而不是換行過後的
