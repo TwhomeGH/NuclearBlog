@@ -120,13 +120,19 @@ export default defineConfig({
 
 ### 工作流说明
 
-项目包含三个工作流:
+项目包含多个工作流:
 
 | 工作流 | 触发条件 | 功能 |
 |--------|---------|------|
 | `build.yml` | Push/PR 到 main | CI 测试，检查构建 |
+| `CI.yml` | Push/PR 到 master、手动触发 | Astro Check 与构建验证 |
 | `deploy.yml` | Push 到 main | 构建并部署到 pages 分支 |
-| `format.yml` | Push/PR | 代码格式和质量检查 |
+| `lint.yml` | Push/PR 到 master、手动触发 | ESLint 与类型检查 |
+| `codeql.yml` | Push/PR 到 master、手动触发、每周定时 | CodeQL 安全与质量分析 |
+
+#### CodeQL 隐性问题排查保障
+
+`codeql.yml` 用于在常规构建和 lint 之外增加一层静态分析保障。它会针对 JavaScript/TypeScript 代码运行 CodeQL 的安全扩展与安全质量规则，帮助提前发现不容易在本地开发、构建或页面预览中暴露的潜在问题，例如不安全的数据流、依赖调用风险或隐蔽的代码质量缺陷。该流程不会替代人工审查和功能测试，而是作为后续排查问题时的参考信号，让可疑点能更早被记录到 GitHub Code Scanning 中。
 
 ---
 
