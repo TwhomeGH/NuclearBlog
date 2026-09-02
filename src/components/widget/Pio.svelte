@@ -20,11 +20,11 @@ let pioCanvas;
 
 // 等待 DOM 加载完成后再初始化 Pio
 function initPio() {
-	if (typeof window !== "undefined" && typeof Paul_Pio !== "undefined") {
+	if (typeof window !== "undefined" && typeof window.Paul_Pio !== "undefined") {
 		try {
 			// 确保DOM元素存在
 			if (pioContainer && pioCanvas && !pioInitialized) {
-				pioInstance = new Paul_Pio(pioOptions);
+				pioInstance = new window.Paul_Pio(pioOptions);
 				pioInitialized = true;
 				console.log("Pio initialized successfully (Svelte)");
 			} else if (!pioContainer || !pioCanvas) {

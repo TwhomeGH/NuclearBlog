@@ -55,7 +55,7 @@ async function processAlbumFolder(
 	// 检查是否为外链模式
 	const isExternalMode = info.mode === "external";
 	let photos: Photo[] = [];
-	var videos: Video[] = [];
+	let videos: Video[] = [];
 	let cover: string;
 
 	if (isExternalMode) {
@@ -105,89 +105,6 @@ async function processAlbumFolder(
 		photos,
 		videos,
 	};
-}
-
-function scanPhotos(folderPath: string, albumId: string): Photo[] {
-	const photos: Photo[] = [];
-	const files = fs.readdirSync(folderPath);
-
-	// 过滤出图片文件
-	const imageFiles = files.filter((file) => {
-		const ext = path.extname(file).toLowerCase();
-		return (
-			[
-				".jpg",
-				".jpeg",
-				".png",
-				".gif",
-				".webp",
-				".svg",
-				".avif",
-				".bmp",
-				".tiff",
-				".tif",
-			].includes(ext) && file !== "cover.jpg"
-		);
-	});
-
-	// 处理每张照片
-	imageFiles.forEach((file, index) => {
-		const filePath = path.join(folderPath, file);
-		const stats = fs.statSync(filePath);
-
-		// 解析文件名中的标签
-		const { baseName, tags } = parseFileName(file);
-
-		photos.push({
-			id: `${albumId}-photo-${index}`,
-			src: `/images/albums/${albumId}/${file}`,
-			alt: baseName,
-			title: baseName,
-			tags: tags,
-			date: stats.mtime.toISOString().split("T")[0],
-		});
-	});
-
-	return photos;
-}
-
-function scanVideos(folderPath: string, albumId: string): Video[] {
-	const videos: Video[] = [];
-	const files = fs.readdirSync(folderPath);
-
-	// 過濾出影片檔案
-	const videoFiles = files.filter((file) => {
-		const ext = path.extname(file).toLowerCase();
-		return [
-			".mp4",
-			".webm",
-			".ogg",
-			".mov",
-			".mkv",
-			".avi",
-			".flv",
-		].includes(ext);
-	});
-
-	// 處理每個影片
-	videoFiles.forEach((file, index) => {
-		const filePath = path.join(folderPath, file);
-		const stats = fs.statSync(filePath);
-
-		// 解析檔名中的標籤
-		const { baseName, tags } = parseFileName(file);
-
-		videos.push({
-			id: `${albumId}-video-${index}`,
-			src: `/videos/albums/${albumId}/${file}`, // ✅ 專門給 VideoComponent 用的路徑
-			alt: baseName, // 可作為 aria-label 或 figcaption
-			title: baseName,
-			tags: tags,
-			date: stats.mtime.toISOString().split("T")[0],
-		});
-	});
-
-	return videos;
 }
 
 function scanMedia(

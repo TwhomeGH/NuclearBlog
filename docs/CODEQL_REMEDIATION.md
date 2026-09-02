@@ -23,7 +23,11 @@
 | File data in outbound network request | `scripts/update-bilibili.mjs` | 从配置读取的 `vmid` 先限制为数字 ID，再通过固定 Bilibili API URL 与 `URLSearchParams` 组装请求 |
 | File data in outbound network request | `scripts/update-bangumi.mjs` | 从配置读取的 `userId` 与 API 返回的 `subjectId` 先验证格式，再通过固定 Bangumi API URL 组装请求 |
 | File data in outbound network request | `scripts/compress-fonts.js` | Meting/Bangumi 字体字集补充请求加入参数验证、HTTPS 检查与固定 Bangumi API URL builder |
-| File data in outbound network request | `scripts/indexnow-submit.js` | IndexNow host/key 加入格式验证，sitemap URL 必须解析后确认属于指定 host 才会提交 |
+| File data in outbound network request | `scripts/indexnow-submit.js` | IndexNow host/key 加入格式验证，sitemap 改由解析器读取；URL 必须 canonicalize、去重、限制数量并确认属于指定 host 才会提交 |
+| Duplicate property | `docs/editor/editor.js` | 移除繁中翻译表中重复的 `内容` key，避免后者静默覆盖前者 |
+| Unused declaration | `src/utils/album-scanner.ts` | 删除旧版分离式 `scanPhotos` / `scanVideos`，保留现行一次扫描图片与影片的 `scanMedia` |
+| Unused declaration | `src/utils/animation-test.js` | 删除未被引用的手动动画测试工具，现有测试组件已有独立 inline 测试逻辑 |
+| Unused declaration | `public/pio/static/pio.js` | 将动态脚本入口从裸 `var Paul_Pio` 改为明确挂载到 `window.Paul_Pio`，对应 Svelte 组件的动态载入方式 |
 
 ## 维护原则
 
@@ -31,4 +35,5 @@
 - 对只是生成临时 id、抽样或排序的场景，避免使用 `Math.random()`，优先使用递增计数器或可重现的固定策略。
 - 涉及外部输入、环境变量或命令执行时，避免拼接 shell 字符串，优先使用参数数组和明确的路径限制。
 - 涉及配置文件数据进入网络请求时，先验证格式并使用固定 API host 与 `URLSearchParams` 组装 URL。
+- 像 IndexNow 这种功能本身就需要读取本地生成文件并对外提交时，应先限定 host、协议、数量与 canonical URL，再集中建立 payload。
 - 涉及 DOM 插入时，避免把字符串重新解释为 HTML，优先使用 `createElement`、`textContent`、属性赋值或经过明确边界处理的资源形式。

@@ -10,7 +10,7 @@
 
 ---- */
 
-var Paul_Pio = function (prop) {
+window.Paul_Pio = function (prop) {
 	const current = {
 		idol: 0,
 		timeout: undefined,

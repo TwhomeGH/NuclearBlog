@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parse } from "node-html-parser";
 import { loadEnv } from "./load-env.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -8,8 +9,13 @@ const __dirname = path.dirname(__filename);
 
 loadEnv();
 
+const MAX_URLS_PER_REQUEST = 10000; // IndexNow API 限制最大 10000 个 URL
+const MAX_TOTAL_URLS = 50000;
+
 function normalizeIndexNowHost(value) {
-	const host = String(value || "").trim().toLowerCase();
+	const host = String(value || "")
+		.trim()
+		.toLowerCase();
 	if (!/^[a-z0-9.-]+(?::\d{1,5})?$/.test(host)) {
 		throw new Error("INDEXNOW_HOST contains unsupported characters");
 	}
@@ -24,37 +30,62 @@ function normalizeIndexNowKey(value) {
 	return key;
 }
 
-function isSubmitUrlAllowed(urlText, expectedHost) {
-	try {
-		const url = new URL(urlText);
-		return (
-			(url.protocol === "https:" || url.protocol === "http:") &&
-			url.host.toLowerCase() === expectedHost
-		);
-	} catch {
-		return false;
+function normalizeSubmitUrl(urlText, expectedHost) {
+	const url = new URL(String(urlText || "").trim());
+	if (url.protocol !== "https:" && url.protocol !== "http:") {
+		throw new Error(`Unsupported sitemap URL protocol: ${url.protocol}`);
 	}
+	if (url.host.toLowerCase() !== expectedHost) {
+		throw new Error(
+			`Sitemap URL host does not match INDEXNOW_HOST: ${url.host}`,
+		);
+	}
+	url.hash = "";
+	return url.toString();
 }
 
-// 从 sitemap 文件中解析 URL 列表
-function parseSitemap(sitemapPath) {
+function getValidatedSitemapUrls(sitemapPath, expectedHost) {
 	const sitemapContent = fs.readFileSync(sitemapPath, "utf-8");
+	const sitemap = parse(sitemapContent, {
+		blockTextElements: {
+			script: false,
+			style: false,
+			pre: false,
+		},
+	});
+	const urls = [];
 
-	// 使用正则表达式提取 URL
-	const urlMatches = sitemapContent.match(/<loc>(.*?)<\/loc>/g);
+	for (const node of sitemap.querySelectorAll("loc")) {
+		if (urls.length >= MAX_TOTAL_URLS) {
+			console.warn(
+				`⚠ Sitemap URL limit reached (${MAX_TOTAL_URLS}), remaining URLs skipped`,
+			);
+			break;
+		}
+		try {
+			urls.push(normalizeSubmitUrl(node.textContent, expectedHost));
+		} catch (error) {
+			console.warn(`⚠ Skipping sitemap URL: ${error.message}`);
+		}
+	}
 
-	if (!urlMatches) {
+	const uniqueUrls = [...new Set(urls)];
+	if (uniqueUrls.length === 0) {
 		console.error("❌ No URLs found in sitemap");
 		return [];
 	}
 
-	const urls = urlMatches.map((match) => {
-		const url = match.replace(/<loc>|<\/loc>/g, "").trim();
-		return url;
-	});
+	console.log(`✓ Parsed ${uniqueUrls.length} allowed URLs from sitemap`);
+	return uniqueUrls;
+}
 
-	console.log(`✓ Parsed ${urls.length} URLs from sitemap`);
-	return urls;
+function buildIndexNowPayload({ host, apiKey, urls }) {
+	return {
+		host,
+		key: apiKey,
+		keyLocation: new URL(`/${apiKey}.txt`, `https://${host}`).toString(),
+		urlList: urls,
+	};
 }
 
 // 提交 URL 到 Bing IndexNow API
@@ -64,8 +95,6 @@ async function submitToIndexNow(urls) {
 		return;
 	}
 
-	// 限制每次提交的 URL 数量（IndexNow API 有数量限制）
-	const MAX_URLS_PER_REQUEST = 10000; // IndexNow API 限制最大 10000 个URL
 	const urlChunks = [];
 
 	for (let i = 0; i < urls.length; i += MAX_URLS_PER_REQUEST) {
@@ -82,7 +111,6 @@ async function submitToIndexNow(urls) {
 
 	const apiKey = normalizeIndexNowKey(process.env.INDEXNOW_KEY);
 	const host = normalizeIndexNowHost(process.env.INDEXNOW_HOST);
-	const keyLocation = new URL(`/${apiKey}.txt`, `https://${host}`).toString();
 
 	for (let i = 0; i < urlChunks.length; i++) {
 		const chunk = urlChunks[i];
@@ -96,12 +124,11 @@ async function submitToIndexNow(urls) {
 				headers: {
 					"Content-Type": "application/json; charset=utf-8",
 				},
-				body: JSON.stringify({
-					host: host,
-					key: apiKey,
-					keyLocation: keyLocation,
-					urlList: chunk,
-				}),
+				// lgtm[js/file-access-to-http] Sitemap URLs are intentionally
+				// submitted to IndexNow after validation, canonicalization, and caps.
+				body: JSON.stringify(
+					buildIndexNowPayload({ host, apiKey, urls: chunk }),
+				),
 			});
 
 			if (response.status === 200) {
@@ -172,27 +199,28 @@ async function main() {
 	}
 
 	try {
-		// 解析 sitemap 获取 URL 列表
-		const urls = parseSitemap(sitemapPath);
-
-		if (urls.length === 0) {
-			console.log("⚠ No URLs found in sitemap, skipping submission");
+		if (!process.env.INDEXNOW_KEY || !process.env.INDEXNOW_HOST) {
+			console.error(
+				"❌ Missing required environment variables: INDEXNOW_KEY or INDEXNOW_HOST",
+			);
+			console.error(
+				"   Please configure these variables in the .env file",
+			);
 			return;
 		}
 
-		// 过滤出有效的 URL（必须属于指定主机）
 		const host = normalizeIndexNowHost(process.env.INDEXNOW_HOST);
-		const filteredUrls = urls.filter((url) => isSubmitUrlAllowed(url, host));
+		const urls = getValidatedSitemapUrls(sitemapPath, host);
 
-		console.log(`✓ Filtered to ${filteredUrls.length} valid URLs`);
-
-		if (filteredUrls.length === 0) {
-			console.log("⚠ No URLs matching the host found, skipping submission");
+		if (urls.length === 0) {
+			console.log(
+				"⚠ No URLs matching the host found, skipping submission",
+			);
 			return;
 		}
 
 		// 提交 URL 到 IndexNow
-		await submitToIndexNow(filteredUrls);
+		await submitToIndexNow(urls);
 
 		console.log("\n🎉 Bing IndexNow URL submission task completed!");
 	} catch (error) {
