@@ -16,6 +16,7 @@ const OUTPUT_FILE = path.join(
 	path.dirname(fileURLToPath(import.meta.url)),
 	"../src/data/bilibili-data.json",
 );
+const API_URL = new URL(API_BASE);
 
 // 状态映射: 1=想看, 2=在看, 3=已看
 const STATUS_MAP = {
@@ -23,6 +24,33 @@ const STATUS_MAP = {
 	2: "watching",
 	3: "completed",
 };
+
+function normalizeBilibiliDescription(value) {
+	if (!value) return "";
+
+	return String(value)
+		.replace(/\\u003c/gi, "<")
+		.replace(/\\u003e/gi, ">")
+		.replace(/[\r\n]+/g, " ")
+		.replace(/\s+/g, " ")
+		.trim();
+}
+
+function normalizeBilibiliVmid(value) {
+	const vmid = String(value || "").trim();
+	if (!/^\d{1,20}$/.test(vmid)) {
+		throw new Error("bilibili.vmid must be a numeric ID");
+	}
+	return vmid;
+}
+
+function buildBilibiliApiUrl(params) {
+	const url = new URL(API_URL);
+	for (const [key, value] of Object.entries(params)) {
+		url.searchParams.set(key, String(value));
+	}
+	return url.toString();
+}
 
 // 延迟函数
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -48,12 +76,12 @@ async function getUserIdFromConfig() {
 		);
 
 		if (match && match[1]) {
-			const vmid = match[1];
-			if (!vmid || vmid.trim() === "") {
+			const vmid = match[1].trim();
+			if (!vmid) {
 				console.warn("Warning: vmid in src/config.ts is empty.");
 				return null;
 			}
-			return vmid;
+			return normalizeBilibiliVmid(vmid);
 		}
 		throw new Error("Could not find bilibili.vmid in config.ts");
 	} catch (error) {
@@ -102,10 +130,15 @@ async function getAnimeModeFromConfig() {
 }
 
 async function getDataPage(vmid, status, typeNum = 1) {
+	const requestUrl = buildBilibiliApiUrl({
+		type: typeNum,
+		follow_status: status,
+		vmid,
+		ps: 1,
+		pn: 1,
+	});
 	const response = await withRetry(() =>
-		axios.get(
-			`${API_BASE}?type=${typeNum}&follow_status=${status}&vmid=${vmid}&ps=1&pn=1`,
-		),
+		axios.get(requestUrl),
 	);
 
 	if (
@@ -133,12 +166,16 @@ async function getData(
 	SESSDATA,
 ) {
 	const headers = SESSDATA ? { cookie: `SESSDATA=${SESSDATA};` } : {};
+	const requestUrl = buildBilibiliApiUrl({
+		type: typeNum,
+		follow_status: status,
+		vmid,
+		ps: PAGE_SIZE,
+		pn,
+	});
 
 	const response = await withRetry(() =>
-		axios.get(
-			`${API_BASE}?type=${typeNum}&follow_status=${status}&vmid=${vmid}&ps=${PAGE_SIZE}&pn=${pn}`,
-			{ headers },
-		),
+		axios.get(requestUrl, { headers }),
 	);
 
 	if (response?.data?.code !== 0) {
@@ -206,15 +243,9 @@ async function getData(
 				: 0;
 
 		// 描述（从evaluate或summary字段获取）
-		let description = bangumi?.evaluate || bangumi?.summary || "";
-		// 清理描述中的特殊字符和换行
-		if (description) {
-			description = description
-				.replace(/\u003c/g, "<")
-				.replace(/\u003e/g, ">")
-				.replace(/\n/g, " ")
-				.trim();
-		}
+		const description = normalizeBilibiliDescription(
+			bangumi?.evaluate || bangumi?.summary,
+		);
 
 		// 提取年份（从发布时间或发布日期）
 		let year = "";

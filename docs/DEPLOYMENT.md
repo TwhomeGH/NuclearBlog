@@ -136,18 +136,7 @@ export default defineConfig({
 
 #### CodeQL 近期修正记录
 
-近期根据 CodeQL 扫描结果修正了以下问题:
-
-| 类型 | 位置 | 处理方式 |
-|------|------|----------|
-| Insecure randomness | `src/plugins/rehype-component-github-card.mjs` | GitHub Card DOM id 从 `Math.random()` 改为模块内递增计数器 |
-| Insecure randomness | `src/plugins/rehype-mermaid.mjs` | Mermaid 容器 id 从随机值改为递增计数器 |
-| DOM text reinterpreted as HTML | `src/plugins/mermaid-render-script.js` | 移除 `innerHTML`、`DOMParser.parseFromString`，改用 `createElement`、`textContent` 与 SVG Blob 图片渲染 |
-| Mermaid SVG 安全边界 | `src/plugins/mermaid-render-script.js` | Mermaid `securityLevel` 从 `loose` 调整为 `strict` |
-| Inefficient regular expression | `scripts/compress-fonts.js` | 字符串字面量收集从多段复杂正则改为单趟扫描器 |
-| Insecure randomness | `scripts/compress-fonts.js` | Bangumi 详情抽样从 `Math.random()` 改为固定比例抽样 |
-
-这些修正的目的不是改变页面功能，而是减少安全扫描噪音，并让后续真正异常更容易被看见。若后续 CodeQL 再出现新的告警，建议优先确认它是否来自源码、构建产物或第三方库，再决定是修正、忽略还是调整扫描范围。
+近期 CodeQL 告警的具体修正记录统一维护在 [CodeQL 修正记录](./CODEQL_REMEDIATION.md)。这里仅说明工作流用途，避免同一份修正清单散落在多个文档中。
 
 ---
 

@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -14,9 +14,33 @@ console.log("Loaded .env configuration file\n");
 // 从环境变量读取配置
 const ENABLE_CONTENT_SYNC = process.env.ENABLE_CONTENT_SYNC !== "false"; // 默认启用
 const CONTENT_REPO_URL = process.env.CONTENT_REPO_URL || "";
-const CONTENT_DIR = process.env.CONTENT_DIR || path.join(rootDir, "content");
+const CONTENT_DIR = resolveContentDir(process.env.CONTENT_DIR);
 
 console.log("Starting content synchronization...\n");
+
+function resolveContentDir(contentDir) {
+	const resolvedPath = contentDir
+		? path.resolve(rootDir, contentDir)
+		: path.join(rootDir, "content");
+	const relativePath = path.relative(rootDir, resolvedPath);
+
+	if (
+		relativePath === "" ||
+		relativePath.startsWith("..") ||
+		path.isAbsolute(relativePath)
+	) {
+		throw new Error(`CONTENT_DIR must stay inside project root: ${contentDir}`);
+	}
+
+	return resolvedPath;
+}
+
+function runGit(args, options) {
+	return execFileSync("git", args, {
+		stdio: "inherit",
+		...options,
+	});
+}
 
 // 检查是否启用内容分离
 if (!ENABLE_CONTENT_SYNC) {
@@ -47,8 +71,7 @@ if (!fs.existsSync(CONTENT_DIR)) {
 
 	try {
 		console.log(`Cloning content repository: ${CONTENT_REPO_URL}`);
-		execSync(`git clone --depth 1 ${CONTENT_REPO_URL} ${CONTENT_DIR}`, {
-			stdio: "inherit",
+		runGit(["clone", "--depth", "1", CONTENT_REPO_URL, CONTENT_DIR], {
 			cwd: rootDir,
 		});
 		console.log("Content repository cloned successfully");
@@ -62,10 +85,7 @@ if (!fs.existsSync(CONTENT_DIR)) {
 	if (fs.existsSync(path.join(CONTENT_DIR, ".git"))) {
 		try {
 			console.log("Pulling latest content...");
-			execSync("git pull --allow-unrelated-histories", {
-				stdio: "inherit",
-				cwd: CONTENT_DIR,
-			});
+			runGit(["pull", "--allow-unrelated-histories"], { cwd: CONTENT_DIR });
 			console.log("Content updated successfully");
 		} catch (error) {
 			console.warn("Content update failed:", error.message);

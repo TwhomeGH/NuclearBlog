@@ -12,6 +12,30 @@ const OUTPUT_FILE = path.join(
 	"../src/data/bangumi-data.json",
 );
 
+function normalizeBangumiUserId(value) {
+	const userId = String(value || "").trim();
+	if (!/^[\w-]{1,64}$/.test(userId)) {
+		throw new Error("bangumi.userId contains unsupported characters");
+	}
+	return userId;
+}
+
+function normalizeNumericId(value, label) {
+	const id = String(value || "").trim();
+	if (!/^\d{1,20}$/.test(id)) {
+		throw new Error(`${label} must be a numeric ID`);
+	}
+	return id;
+}
+
+function buildBangumiApiUrl(pathname, params = {}) {
+	const url = new URL(pathname, API_BASE);
+	for (const [key, value] of Object.entries(params)) {
+		url.searchParams.set(key, String(value));
+	}
+	return url.toString();
+}
+
 async function getUserIdFromConfig() {
 	try {
 		const configContent = await fs.readFile(CONFIG_PATH, "utf-8");
@@ -20,7 +44,7 @@ async function getUserIdFromConfig() {
 		);
 
 		if (match && match[1]) {
-			const userId = match[1];
+			const userId = match[1].trim();
 			if (
 				userId === "your-bangumi-id" ||
 				userId === "your-user-id" ||
@@ -31,7 +55,7 @@ async function getUserIdFromConfig() {
 				);
 				return userId;
 			}
-			return userId;
+			return normalizeBangumiUserId(userId);
 		}
 		throw new Error("Could not find bangumi.userId in config.ts");
 	} catch (error) {
@@ -61,7 +85,10 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function fetchSubjectDetail(subjectId) {
 	try {
-		const response = await fetch(`${API_BASE}/v0/subjects/${subjectId}`);
+		const safeSubjectId = normalizeNumericId(subjectId, "subjectId");
+		const response = await fetch(
+			buildBangumiApiUrl(`/v0/subjects/${safeSubjectId}`),
+		);
 		if (!response.ok) return null;
 		return await response.json();
 	} catch (error) {
@@ -96,9 +123,18 @@ async function fetchCollection(userId, type) {
 	let hasMore = true;
 
 	console.log(`Fetching type: ${type}...`);
+	const safeUserId = normalizeBangumiUserId(userId);
 
 	while (hasMore) {
-		const url = `${API_BASE}/v0/users/${userId}/collections?subject_type=2&type=${type}&limit=${limit}&offset=${offset}`;
+		const url = buildBangumiApiUrl(
+			`/v0/users/${encodeURIComponent(safeUserId)}/collections`,
+			{
+				subject_type: 2,
+				type,
+				limit,
+				offset,
+			},
+		);
 		try {
 			const response = await fetch(url);
 

@@ -8,6 +8,34 @@ const __dirname = path.dirname(__filename);
 
 loadEnv();
 
+function normalizeIndexNowHost(value) {
+	const host = String(value || "").trim().toLowerCase();
+	if (!/^[a-z0-9.-]+(?::\d{1,5})?$/.test(host)) {
+		throw new Error("INDEXNOW_HOST contains unsupported characters");
+	}
+	return host;
+}
+
+function normalizeIndexNowKey(value) {
+	const key = String(value || "").trim();
+	if (!/^[a-zA-Z0-9_-]{8,128}$/.test(key)) {
+		throw new Error("INDEXNOW_KEY contains unsupported characters");
+	}
+	return key;
+}
+
+function isSubmitUrlAllowed(urlText, expectedHost) {
+	try {
+		const url = new URL(urlText);
+		return (
+			(url.protocol === "https:" || url.protocol === "http:") &&
+			url.host.toLowerCase() === expectedHost
+		);
+	} catch {
+		return false;
+	}
+}
+
 // 从 sitemap 文件中解析 URL 列表
 function parseSitemap(sitemapPath) {
 	const sitemapContent = fs.readFileSync(sitemapPath, "utf-8");
@@ -44,17 +72,17 @@ async function submitToIndexNow(urls) {
 		urlChunks.push(urls.slice(i, i + MAX_URLS_PER_REQUEST));
 	}
 
-	const apiKey = process.env.INDEXNOW_KEY;
-	const host = process.env.INDEXNOW_HOST;
-	const keyLocation = `https://${host}/${apiKey}.txt`;
-
-	if (!apiKey || !host) {
+	if (!process.env.INDEXNOW_KEY || !process.env.INDEXNOW_HOST) {
 		console.error(
 			"❌ Missing required environment variables: INDEXNOW_KEY or INDEXNOW_HOST",
 		);
 		console.error("   Please configure these variables in the .env file");
 		return;
 	}
+
+	const apiKey = normalizeIndexNowKey(process.env.INDEXNOW_KEY);
+	const host = normalizeIndexNowHost(process.env.INDEXNOW_HOST);
+	const keyLocation = new URL(`/${apiKey}.txt`, `https://${host}`).toString();
 
 	for (let i = 0; i < urlChunks.length; i++) {
 		const chunk = urlChunks[i];
@@ -152,12 +180,9 @@ async function main() {
 			return;
 		}
 
-		// 过滤出有效的 URL（以指定主机开头的）
-		const host = process.env.INDEXNOW_HOST;
-		const filteredUrls = urls.filter(
-			(url) =>
-				url.startsWith(`https://${host}/`) || url.startsWith(`http://${host}/`),
-		);
+		// 过滤出有效的 URL（必须属于指定主机）
+		const host = normalizeIndexNowHost(process.env.INDEXNOW_HOST);
+		const filteredUrls = urls.filter((url) => isSubmitUrlAllowed(url, host));
 
 		console.log(`✓ Filtered to ${filteredUrls.length} valid URLs`);
 

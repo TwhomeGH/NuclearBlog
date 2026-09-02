@@ -185,6 +185,60 @@ function getAsciiCharset() {
 	return text;
 }
 
+function assertSafeMetingPart(value, label) {
+	const text = String(value || "").trim();
+	if (!/^[\w.-]{1,128}$/.test(text)) {
+		throw new Error(`${label} contains unsupported characters`);
+	}
+	return text;
+}
+
+function buildMetingApiUrl(template, config) {
+	const replacements = {
+		":server": assertSafeMetingPart(config.server, "meting server"),
+		":type": assertSafeMetingPart(config.type, "meting type"),
+		":id": assertSafeMetingPart(config.id, "meting id"),
+		":auth": "",
+		":r": String(Date.now()),
+	};
+
+	let urlText = template;
+	for (const [placeholder, value] of Object.entries(replacements)) {
+		urlText = urlText.replaceAll(placeholder, encodeURIComponent(value));
+	}
+
+	const url = new URL(urlText);
+	if (url.protocol !== "https:") {
+		throw new Error("Meting API URL must use https");
+	}
+
+	return url.toString();
+}
+
+function assertSafeBangumiUserId(value) {
+	const userId = String(value || "").trim();
+	if (!/^[\w-]{1,64}$/.test(userId)) {
+		throw new Error("Bangumi userId contains unsupported characters");
+	}
+	return userId;
+}
+
+function assertNumericId(value, label) {
+	const id = String(value || "").trim();
+	if (!/^\d{1,20}$/.test(id)) {
+		throw new Error(`${label} must be a numeric ID`);
+	}
+	return id;
+}
+
+function buildBangumiApiUrl(pathname, params = {}) {
+	const url = new URL(pathname, "https://api.bgm.tv");
+	for (const [key, value] of Object.entries(params)) {
+		url.searchParams.set(key, String(value));
+	}
+	return url.toString();
+}
+
 // 获取 Meting API 歌单数据中的文字
 async function fetchMetingPlaylistText() {
 	try {
@@ -252,12 +306,11 @@ async function fetchMetingPlaylistText() {
 		}
 
 		// 构建 API URL
-		const apiUrl = meting_api
-			.replace(":server", meting_server)
-			.replace(":type", meting_type)
-			.replace(":id", meting_id)
-			.replace(":auth", "")
-			.replace(":r", Date.now().toString());
+		const apiUrl = buildMetingApiUrl(meting_api, {
+			server: meting_server,
+			type: meting_type,
+			id: meting_id,
+		});
 
 		console.log("ℹ Fetching music playlist from Meting API...");
 		console.log(`  URL: ${apiUrl}`);
@@ -491,7 +544,9 @@ async function fetchBangumiAnimeText() {
 			/anime:\s*\{[\s\S]*?mode:\s*["']([^"']+)["']/,
 		);
 
-		const userId = bangumiUserIdMatch ? bangumiUserIdMatch[1] : null;
+		const userId = bangumiUserIdMatch
+			? assertSafeBangumiUserId(bangumiUserIdMatch[1])
+			: null;
 		const mode = animeModeMatch ? animeModeMatch[1] : "bangumi";
 
 		if (mode !== "bangumi" || !userId) {
@@ -505,7 +560,6 @@ async function fetchBangumiAnimeText() {
 		console.log(`  User ID: ${userId}`);
 
 		const textSet = new Set();
-		const BANGUMI_API_BASE = "https://api.bgm.tv";
 
 		// Bangumi 收藏类型：1=想看，2=看过，3=在看，4=搁置，5=抛弃
 		const collectionTypes = [1, 2, 3, 4, 5];
@@ -523,7 +577,15 @@ async function fetchBangumiAnimeText() {
 					const timeoutId = setTimeout(() => controller.abort(), 10000);
 
 					const response = await fetch(
-						`${BANGUMI_API_BASE}/v0/users/${userId}/collections?subject_type=${subjectType}&type=${type}&limit=${limit}&offset=${offset}`,
+						buildBangumiApiUrl(
+							`/v0/users/${encodeURIComponent(userId)}/collections`,
+							{
+								subject_type: subjectType,
+								type,
+								limit,
+								offset,
+							},
+						),
 						{
 							signal: controller.signal,
 							headers: {
@@ -570,7 +632,9 @@ async function fetchBangumiAnimeText() {
 				const timeoutId = setTimeout(() => controller.abort(), 5000);
 
 				const response = await fetch(
-					`${BANGUMI_API_BASE}/v0/subjects/${subjectId}/persons`,
+					buildBangumiApiUrl(
+						`/v0/subjects/${assertNumericId(subjectId, "subjectId")}/persons`,
+					),
 					{
 						signal: controller.signal,
 						headers: {
