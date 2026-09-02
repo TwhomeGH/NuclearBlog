@@ -640,8 +640,8 @@ async function fetchBangumiAnimeText() {
 				}
 
 				// 获取制作公司信息（限制并发请求）
-				if (item.subject_id && Math.random() < 0.3) {
-					// 只获取30%的详细信息，避免请求过多
+				if (item.subject_id && processedCount % 3 === 0) {
+					// 固定抽样部分详细信息，避免请求过多
 					const persons = await fetchSubjectPersons(item.subject_id);
 
 					persons.forEach((person) => {
@@ -680,6 +680,72 @@ async function fetchBangumiAnimeText() {
 	}
 }
 
+function decodeStringEscape(char) {
+	switch (char) {
+		case "n":
+			return "\n";
+		case "t":
+			return "\t";
+		case "r":
+			return "\r";
+		default:
+			return char;
+	}
+}
+
+function collectJavaScriptStringText(content) {
+	const strings = [];
+	const quoteChars = new Set(['"', "'", "`"]);
+	let index = 0;
+
+	while (index < content.length) {
+		const quote = content[index];
+
+		if (!quoteChars.has(quote)) {
+			index++;
+			continue;
+		}
+
+		index++;
+		let value = "";
+
+		while (index < content.length) {
+			const char = content[index];
+
+			if (char === "\\") {
+				const next = content[index + 1];
+				if (next === undefined) {
+					index++;
+					break;
+				}
+				value += decodeStringEscape(next);
+				index += 2;
+				continue;
+			}
+
+			if (char === quote) {
+				index++;
+				break;
+			}
+
+			value += char;
+			index++;
+		}
+
+		strings.push(value);
+	}
+
+	return strings;
+}
+
+function addJavaScriptStringChars(content, textSet) {
+	for (const text of collectJavaScriptStringText(content)) {
+		for (const char of text) {
+			textSet.add(char);
+		}
+	}
+}
+
 // 收集所有使用的文字（用于 CJK 字体）
 async function collectText() {
 	const { lang } = await getConfig();
@@ -694,55 +760,7 @@ async function collectText() {
 		if (file.endsWith(".ts") || file.endsWith(".js")) {
 			const content = fs.readFileSync(file, "utf-8");
 
-			// 改进的字符串匹配
-			const patterns = [
-				// 双引号字符串
-				/"([^"\\]|\\.|\\n|\\t)*"/g,
-				// 单引号字符串
-				/'([^'\\]|\\.|\\n|\\t)*'/g,
-				// 模板字符串
-				/`([^`\\]|\\.|\\n|\\t)*`/g,
-			];
-
-			patterns.forEach((pattern) => {
-				const matches = content.match(pattern);
-				if (matches) {
-					matches.forEach((match) => {
-						let text = match;
-
-						// 清理引号
-						if (
-							(text.startsWith('"') && text.endsWith('"')) ||
-							(text.startsWith("'") && text.endsWith("'")) ||
-							(text.startsWith("`") && text.endsWith("`"))
-						) {
-							text = text.slice(1, -1);
-						}
-
-						// 处理转义字符
-						text = text
-							.replace(/\\n/g, "\n")
-							.replace(/\\t/g, "\t")
-							.replace(/\\"/g, '"')
-							.replace(/\\'/g, "'");
-
-						for (const char of text) {
-							textSet.add(char);
-						}
-					});
-				}
-			});
-
-			// 简单正则作为补充
-			const stringMatches = content.match(/["'`]([^"'`]+)["'`]/g);
-			if (stringMatches) {
-				stringMatches.forEach((match) => {
-					const text = match.slice(1, -1);
-					for (const char of text) {
-						textSet.add(char);
-					}
-				});
-			}
+			addJavaScriptStringChars(content, textSet);
 		}
 	});
 
@@ -751,57 +769,7 @@ async function collectText() {
 	if (fs.existsSync(configFile)) {
 		const content = fs.readFileSync(configFile, "utf-8");
 
-		// 改进的字符串匹配
-		const patterns = [
-			// 双引号字符串
-			/"([^"\\]|\\.|\\n|\\t)*"/g,
-			// 单引号字符串
-			/'([^'\\]|\\.|\\n|\\t)*'/g,
-			// 模板字符串
-			/`([^`\\]|\\.|\\n|\\t)*`/g,
-		];
-
-		patterns.forEach((pattern) => {
-			const matches = content.match(pattern);
-			if (matches) {
-				matches.forEach((match) => {
-					// 清理引号和注释标记
-					let text = match;
-
-					// 移除字符串的引号
-					if (
-						(text.startsWith('"') && text.endsWith('"')) ||
-						(text.startsWith("'") && text.endsWith("'")) ||
-						(text.startsWith("`") && text.endsWith("`"))
-					) {
-						text = text.slice(1, -1);
-					}
-
-					// 处理转义字符
-					text = text
-						.replace(/\\n/g, "\n")
-						.replace(/\\t/g, "\t")
-						.replace(/\\"/g, '"')
-						.replace(/\\'/g, "'");
-
-					// 提取所有字符（包括中文）
-					for (const char of text) {
-						textSet.add(char);
-					}
-				});
-			}
-		});
-
-		// 作为补充，还用原来的简单正则再扫一遍，确保不遗漏
-		const simpleMatches = content.match(/["'`]([^"'`]+)["'`]/g);
-		if (simpleMatches) {
-			simpleMatches.forEach((match) => {
-				const text = match.slice(1, -1);
-				for (const char of text) {
-					textSet.add(char);
-				}
-			});
-		}
+		addJavaScriptStringChars(content, textSet);
 	}
 
 	// 3. 读取对应语言的 i18n 文件
@@ -809,51 +777,7 @@ async function collectText() {
 	if (fs.existsSync(i18nFile)) {
 		const content = fs.readFileSync(i18nFile, "utf-8");
 
-		// 改进的字符串匹配
-		const patterns = [
-			/"([^"\\]|\\.|\\n|\\t)*"/g,
-			/'([^'\\]|\\.|\\n|\\t)*'/g,
-			/`([^`\\]|\\.|\\n|\\t)*`/g,
-		];
-
-		patterns.forEach((pattern) => {
-			const matches = content.match(pattern);
-			if (matches) {
-				matches.forEach((match) => {
-					let text = match;
-
-					if (
-						(text.startsWith('"') && text.endsWith('"')) ||
-						(text.startsWith("'") && text.endsWith("'")) ||
-						(text.startsWith("`") && text.endsWith("`"))
-					) {
-						text = text.slice(1, -1);
-					}
-
-					// 处理转义字符
-					text = text
-						.replace(/\\n/g, "\n")
-						.replace(/\\t/g, "\t")
-						.replace(/\\"/g, '"')
-						.replace(/\\'/g, "'");
-
-					for (const char of text) {
-						textSet.add(char);
-					}
-				});
-			}
-		});
-
-		// 简单正则作为补充
-		const stringMatches = content.match(/["'`]([^"'`]+)["'`]/g);
-		if (stringMatches) {
-			stringMatches.forEach((match) => {
-				const text = match.slice(1, -1);
-				for (const char of text) {
-					textSet.add(char);
-				}
-			});
-		}
+		addJavaScriptStringChars(content, textSet);
 	}
 
 	// 4. 读取 content 目录（根据环境变量决定路径）

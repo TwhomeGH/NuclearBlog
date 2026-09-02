@@ -2,6 +2,8 @@ import { h } from "hastscript";
 import { visit } from "unist-util-visit";
 import mermaidRenderScript from "./mermaid-render-script.js?raw";
 
+let mermaidIdCounter = 0;
+
 export function rehypeMermaid() {
 	return (tree) => {
 		visit(tree, "element", (node) => {
@@ -12,7 +14,7 @@ export function rehypeMermaid() {
 				node.properties.className.includes("mermaid-container")
 			) {
 				const mermaidCode = node.properties["data-mermaid-code"] || "";
-				const mermaidId = `mermaid-${Math.random().toString(36).slice(-6)}`;
+				const mermaidId = `mermaid-${++mermaidIdCounter}`;
 
 				// 创建 Mermaid 容器
 				const mermaidContainer = h(

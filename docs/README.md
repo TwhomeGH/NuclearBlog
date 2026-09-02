@@ -2,12 +2,24 @@
 
 欢迎查阅 Mizuki 的详细文档！
 
+## 🧭 快速导航
+
+| 文档 | 适合什么时候看 | 主要内容 |
+|------|----------------|----------|
+| [主 README](../README.zh.md) | 第一次了解项目、需要快速启动 | 项目介绍、快速开始、基础配置、常见问题 |
+| [補充改動](./OtherFeature.md) | 想知道当前版本额外改了什么 | Video 组件、图片尺寸扩展、近期维护说明 |
+| [部署指南](./DEPLOYMENT.md) | 准备上线、构建失败、排查 GitHub Actions | GitHub Pages、Vercel、Netlify、Cloudflare Pages、Corepack/pnpm 排查、CodeQL 保障 |
+| [自动构建触发快速参考](./AUTO_BUILD_TRIGGER.md) | 内容更新后没有自动重新部署 | Repository Dispatch 快速配置 |
+| [内容分离完整指南](./CONTENT_SEPARATION.md) | 想把文章内容和站点代码拆开维护 | 内容同步、私有仓库、CI/CD、故障排查 |
+| [内容仓库结构指南](./CONTENT_REPOSITORY.md) | 正在整理独立内容仓库 | 推荐目录、文章/图片组织、内容编写规范 |
+| [内容迁移指南](./MIGRATION_GUIDE.md) | 从单仓库迁移到内容分离模式 | 迁移步骤、验证方法、部署配置 |
+
 ## 📚 文档列表
 
 
 ### 這一版的改動部分說明
 
-[**補充改動**](./docs/OtherFeature.md)
+[**補充改動**](./OtherFeature.md)
 
 
 ### 核心文档
@@ -75,6 +87,12 @@
 ### 我的部署遇到问题
 → 阅读 [部署指南 - 故障排查](./DEPLOYMENT.md#-故障排查)
 
+### 本地 pnpm/build 跑不起来
+→ 阅读 [部署指南 - Corepack 与 pnpm 修复](./DEPLOYMENT.md#问题-8-本地-pnpm-或-build-无法启动)
+
+### 想看 CodeQL 最近修了什么
+→ 阅读 [部署指南 - CodeQL 近期修正](./DEPLOYMENT.md#codeql-近期修正记录)
+
 ### 我遇到了内容同步错误
 → 阅读 [内容分离指南 - 故障排查](./CONTENT_SEPARATION.md#-故障排查)
 
@@ -91,6 +109,7 @@ docs/
 ├── MIGRATION_GUIDE.md           # 迁移指南
 ├── DEPLOYMENT.md                # 部署完整指南
 ├── AUTO_BUILD_TRIGGER.md        # 自动构建触发快速参考
+├── OtherFeature.md              # 当前版本补充改动
 └── image/                       # 文档图片资源
 ```
 

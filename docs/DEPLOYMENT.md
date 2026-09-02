@@ -134,6 +134,21 @@ export default defineConfig({
 
 `codeql.yml` 用于在常规构建和 lint 之外增加一层静态分析保障。它会针对 JavaScript/TypeScript 代码运行 CodeQL 的安全扩展与安全质量规则，帮助提前发现不容易在本地开发、构建或页面预览中暴露的潜在问题，例如不安全的数据流、依赖调用风险或隐蔽的代码质量缺陷。该流程不会替代人工审查和功能测试，而是作为后续排查问题时的参考信号，让可疑点能更早被记录到 GitHub Code Scanning 中。
 
+#### CodeQL 近期修正记录
+
+近期根据 CodeQL 扫描结果修正了以下问题:
+
+| 类型 | 位置 | 处理方式 |
+|------|------|----------|
+| Insecure randomness | `src/plugins/rehype-component-github-card.mjs` | GitHub Card DOM id 从 `Math.random()` 改为模块内递增计数器 |
+| Insecure randomness | `src/plugins/rehype-mermaid.mjs` | Mermaid 容器 id 从随机值改为递增计数器 |
+| DOM text reinterpreted as HTML | `src/plugins/mermaid-render-script.js` | 移除 `innerHTML`、`DOMParser.parseFromString`，改用 `createElement`、`textContent` 与 SVG Blob 图片渲染 |
+| Mermaid SVG 安全边界 | `src/plugins/mermaid-render-script.js` | Mermaid `securityLevel` 从 `loose` 调整为 `strict` |
+| Inefficient regular expression | `scripts/compress-fonts.js` | 字符串字面量收集从多段复杂正则改为单趟扫描器 |
+| Insecure randomness | `scripts/compress-fonts.js` | Bangumi 详情抽样从 `Math.random()` 改为固定比例抽样 |
+
+这些修正的目的不是改变页面功能，而是减少安全扫描噪音，并让后续真正异常更容易被看见。若后续 CodeQL 再出现新的告警，建议优先确认它是否来自源码、构建产物或第三方库，再决定是修正、忽略还是调整扫描范围。
+
 ---
 
 ## 🔷 Vercel 部署
@@ -401,6 +416,34 @@ fatal: could not read Username for 'https://github.com'
 2. 检查 `ENABLE_CONTENT_SYNC` 是否设置为 `true`
 3. 验证 `CONTENT_REPO_URL` 是否正确
 4. 清除部署平台的缓存并重新部署
+
+### 问题 8: 本地 pnpm 或 build 无法启动
+
+**常见错误信息**:
+```text
+Error: Cannot find module 'C:\Users\<user>\AppData\Roaming\npm\node_modules\pnpm\bin\pnpm.cjs'
+code: 'MODULE_NOT_FOUND'
+```
+
+**原因**: 这通常不是 Astro 或项目源码的问题，而是本机的全局 `pnpm` 启动器已经损坏。Windows 仍然找到旧的 `pnpm.cmd`，但它指向的 `pnpm.cjs` 文件已经不存在。若之前安装依赖或运行检查时中途被中断，也可能同时留下不完整的 `node_modules`。
+
+**可尝试修复**:
+```powershell
+corepack enable
+corepack prepare pnpm@10.22.0 --activate
+corepack pnpm install --frozen-lockfile
+corepack pnpm build
+```
+
+如果只是想确认项目诊断，可以先跑:
+```powershell
+corepack pnpm astro check
+```
+
+**补充说明**:
+- 本项目在 `package.json` 中声明的包管理器是 `pnpm@10.22.0`，优先使用 Corepack 能避免全局 pnpm 版本漂移。
+- 如果 `pnpm build` 仍然走到旧的 `AppData\Roaming\npm` 路径，先使用 `corepack pnpm build` 绕过损坏的全局 shim。
+- 如果 `node_modules` 曾经被中断重建，重新执行 `corepack pnpm install --frozen-lockfile` 通常可以恢复。
 
 ---
 

@@ -89,16 +89,16 @@
 	}
 
 	// 缩放平移
-	function attachZoomControls(element, svgElement) {
+	function attachZoomControls(element, diagramElement) {
 		if (element.__zoomAttached) return;
 		element.__zoomAttached = true;
 
 		const wrapper = document.createElement("div");
 		wrapper.className = "mermaid-zoom-wrapper";
 
-		const svgParent = svgElement.parentNode;
-		wrapper.appendChild(svgElement);
-		svgParent.appendChild(wrapper);
+		const diagramParent = diagramElement.parentNode;
+		wrapper.appendChild(diagramElement);
+		diagramParent.appendChild(wrapper);
 
 		let scale = 1;
 		let tx = 0;
@@ -111,11 +111,11 @@
 		}
 		const controls = document.createElement("div");
 		controls.className = "mermaid-zoom-controls";
-		controls.innerHTML = `
-			<button class="btn-regular rounded-lg h-10 w-10 active:scale-90" data-action="zoom-in" title="Zoom in">+</button>
-			<button class="btn-regular rounded-lg h-10 w-10 active:scale-90" data-action="zoom-out" title="Zoom out">−</button>
-			<button class="btn-regular rounded-lg h-10 w-10 active:scale-90" data-action="reset" title="Reset">⤾</button>
-		`;
+		controls.append(
+			createZoomButton("zoom-in", "Zoom in", "+"),
+			createZoomButton("zoom-out", "Zoom out", "−"),
+			createZoomButton("reset", "Reset", "⤾"),
+		);
 		element.appendChild(controls);
 
 		controls.addEventListener("click", (ev) => {
@@ -224,6 +224,45 @@
 		});
 	}
 
+	function createZoomButton(action, title, label) {
+		const button = document.createElement("button");
+		button.className = "btn-regular rounded-lg h-10 w-10 active:scale-90";
+		button.dataset.action = action;
+		button.title = title;
+		button.textContent = label;
+		return button;
+	}
+
+	function createMermaidImage(svg) {
+		const blob = new Blob([svg], { type: "image/svg+xml" });
+		const objectUrl = URL.createObjectURL(blob);
+		const image = document.createElement("img");
+
+		image.src = objectUrl;
+		image.alt = "Mermaid diagram";
+		image.className = "mermaid-rendered-svg";
+		image.style.width = "100%";
+		image.style.maxWidth = "100%";
+		image.style.height = "auto";
+		image.style.minHeight = "300px";
+
+		image.addEventListener(
+			"load",
+			() => URL.revokeObjectURL(objectUrl),
+			{ once: true },
+		);
+
+		return image;
+	}
+
+	function setElementText(element, className, text) {
+		element.textContent = "";
+		const message = document.createElement("div");
+		message.className = className;
+		message.textContent = text;
+		element.appendChild(message);
+	}
+
 	// 设置其他事件监听器
 	function setupEventListeners() {
 		// 监听页面切换
@@ -256,7 +295,7 @@
 					fontFamily: "inherit",
 					fontSize: "16px",
 				},
-				securityLevel: "loose",
+				securityLevel: "strict",
 				// 添加错误处理配置
 				errorLevel: "warn",
 				logLevel: "error",
@@ -320,7 +359,7 @@
 					secondaryColor: isDark ? "#333333" : "#f0f0f0",
 					tertiaryColor: isDark ? "#555555" : "#e0e0e0",
 				},
-				securityLevel: "loose",
+				securityLevel: "strict",
 				errorLevel: "warn",
 				logLevel: "error",
 			});
@@ -341,8 +380,11 @@
 							}
 
 							// 显示加载状态
-							element.innerHTML =
-								'<div class="mermaid-loading">Rendering diagram...</div>';
+							setElementText(
+								element,
+								"mermaid-loading",
+								"Rendering diagram...",
+							);
 
 							// 渲染图表
 							const { svg } = await window.mermaid.render(
@@ -350,36 +392,17 @@
 								code,
 							);
 
-							const parser = new DOMParser();
-							const doc = parser.parseFromString(
-								svg,
-								"image/svg+xml",
-							);
-							const svgElement = doc.documentElement;
+							const diagramImage = createMermaidImage(svg);
 
-							element.innerHTML = "";
+							element.textContent = "";
 							element.__zoomAttached = false;
-							element.appendChild(svgElement);
+							element.appendChild(diagramImage);
 
 							// 添加响应式支持
-							const insertedSvg = element.querySelector("svg");
-							if (insertedSvg) {
-								insertedSvg.setAttribute("width", "100%");
-								insertedSvg.removeAttribute("height");
-								insertedSvg.style.maxWidth = "100%";
-								insertedSvg.style.height = "auto";
-								//Todo 需要根据实际情况
-								insertedSvg.style.minHeight = "300px";
-
-								// 强制应用样式
-								if (isDark) {
-									svgElement.style.filter =
-										"brightness(0.9) contrast(1.1)";
-								} else {
-									svgElement.style.filter = "none";
-								}
-								attachZoomControls(element, insertedSvg);
-							}
+							diagramImage.style.filter = isDark
+								? "brightness(0.9) contrast(1.1)"
+								: "none";
+							attachZoomControls(element, diagramImage);
 
 							// 渲染成功，跳出重试循环
 							break;
@@ -395,14 +418,30 @@
 									`Failed to render Mermaid diagram after ${maxAttempts} attempts:`,
 									error,
 								);
-								element.innerHTML = `
-									<div class="mermaid-error">
-										<p>Failed to render diagram after ${maxAttempts} attempts.</p>
-										<button onclick="location.reload()" style="margin-top: 8px; padding: 4px 8px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer;">
-											Retry Page
-										</button>
-									</div>
-								`;
+								element.textContent = "";
+								const errorContainer =
+									document.createElement("div");
+								errorContainer.className = "mermaid-error";
+
+								const errorText = document.createElement("p");
+								errorText.textContent = `Failed to render diagram after ${maxAttempts} attempts.`;
+
+								const retryButton =
+									document.createElement("button");
+								retryButton.textContent = "Retry Page";
+								retryButton.style.marginTop = "8px";
+								retryButton.style.padding = "4px 8px";
+								retryButton.style.background = "var(--primary)";
+								retryButton.style.color = "white";
+								retryButton.style.border = "none";
+								retryButton.style.borderRadius = "4px";
+								retryButton.style.cursor = "pointer";
+								retryButton.addEventListener("click", () =>
+									location.reload(),
+								);
+
+								errorContainer.append(errorText, retryButton);
+								element.appendChild(errorContainer);
 							} else {
 								// 等待一段时间后重试
 								await new Promise((resolve) =>
