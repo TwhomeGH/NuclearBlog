@@ -2,6 +2,16 @@
 
 欢迎查阅 Mizuki 的详细文档！
 
+## 新功能與維護入口
+
+- [本機開發與更新排查](DEVELOPMENT.md)：Node、Astro 7、區網測試與存檔未更新。
+- [前端組件與版面維護](FRONTEND_MAINTENANCE.md)：版面分層、組件入口與提交界線。
+- [浮動目錄與音樂播放器](READING_TOOLS.md)：收合、拖曳、位置保存及設定。
+- [Markdown 圖表](MARKDOWN_CHARTS.md)：Mermaid／ECharts 語法、互動與間距。
+- [系列文章與長文拆分](ARTICLE_SERIES.md)：metadata、排序、導覽與草稿。
+
+正式功能說明以本目錄為入口，網站中的 example 文章用於展示效果。原有 MIGRATION_GUIDE 仍專門說明內容倉庫遷移。
+
 ## 🧭 快速导航
 
 | 文档 | 适合什么时候看 | 主要内容 |
@@ -112,6 +122,11 @@
 ```
 docs/
 ├── README.md                    # 本文档 - 索引导航
+├── DEVELOPMENT.md               # 本機開發與更新排查
+├── FRONTEND_MAINTENANCE.md      # 組件與版面維護
+├── READING_TOOLS.md             # 浮動目錄與播放器
+├── MARKDOWN_CHARTS.md           # Mermaid 與 ECharts
+├── ARTICLE_SERIES.md            # 系列文章與拆分
 ├── CONTENT_SEPARATION.md        # 内容分离核心指南
 ├── CONTENT_REPOSITORY.md        # 内容仓库结构
 ├── MIGRATION_GUIDE.md           # 迁移指南
