@@ -1,5 +1,6 @@
 ---
 import ConfigCarrier from "@components/ConfigCarrier.astro";
+import FloatingTOC from "@components/control/FloatingTOC.astro";
 import MusicPlayer from "@components/widget/MusicPlayer.svelte";
 import Pio from "@components/widget/Pio.svelte"; // 使用 Svelte 版本的 Pio 组件
 import {
@@ -396,6 +397,8 @@ if (siteConfig.font) {
 
 		<ConfigCarrier />
 		<slot />
+
+		{siteConfig.toc.enable && <FloatingTOC />}
 
 		<!-- Music Player - 仅在启用时加载 -->
 		{musicPlayerConfig.enable && <MusicPlayer client:idle />}

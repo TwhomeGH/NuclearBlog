@@ -2,6 +2,7 @@
 import Icon from "@iconify/svelte";
 import { onDestroy, onMount } from "svelte";
 import { slide } from "svelte/transition";
+import { floatingPanel } from "../../utils/floating-panel";
 // 从配置文件中导入音乐播放器配置
 import { musicPlayerConfig } from "../../config";
 // 导入国际化相关的 Key 和 i18n 实例
@@ -26,7 +27,11 @@ let isPlaying = false;
 // 播放器是否展开，默认为 false
 let isExpanded = false;
 // 播放器是否隐藏，默认为 false
-let isHidden = false;
+let isHidden = true;
+let viewReady = false;
+$: if (viewReady) {
+	try { localStorage.setItem("music-player-view-v1", isHidden ? "collapsed" : isExpanded ? "expanded" : "mini"); } catch { /* noop */ }
+}
 // 是否显示播放列表，默认为 false
 let showPlaylist = false;
 // 当前播放时间，默认为 0
@@ -174,8 +179,18 @@ function togglePlay() {
 	}
 }
 
+function announceMusicOpen() {
+	document.dispatchEvent(new CustomEvent("reading-tool:open", { detail: "music" }));
+}
+function handleReadingToolOpen(event: Event) {
+	if ((event as CustomEvent).detail === "toc") {
+		isHidden = true; isExpanded = false; showPlaylist = false;
+	}
+}
+
 function toggleExpanded() {
 	isExpanded = !isExpanded;
+	if (isExpanded) announceMusicOpen();
 	if (isExpanded) {
 		showPlaylist = false;
 		isHidden = false;
@@ -184,6 +199,7 @@ function toggleExpanded() {
 
 function toggleHidden() {
 	isHidden = !isHidden;
+	if (!isHidden) announceMusicOpen();
 	if (isHidden) {
 		isExpanded = false;
 		showPlaylist = false;
@@ -409,6 +425,13 @@ function formatTime(seconds: number): string {
 
 const interactionEvents = ['click', 'keydown', 'touchstart'];
 onMount(() => {
+    try {
+        const view = localStorage.getItem("music-player-view-v1");
+        isHidden = view !== "mini" && view !== "expanded";
+        isExpanded = view === "expanded";
+    } catch { /* 保留收合預設值。 */ }
+    viewReady = true;
+    document.addEventListener("reading-tool:open", handleReadingToolOpen);
     loadVolumeSettings(); 
     interactionEvents.forEach(event => {
         document.addEventListener(event, handleUserInteraction, { capture: true });
@@ -432,6 +455,7 @@ onMount(() => {
 
 onDestroy(() => {
     if (typeof document !== 'undefined') {
+        document.removeEventListener("reading-tool:open", handleReadingToolOpen);
         interactionEvents.forEach(event => {
             document.removeEventListener(event, handleUserInteraction, { capture: true });
         });
@@ -472,39 +496,30 @@ onDestroy(() => {
 </div>
 {/if}
 
-<div class="music-player fixed bottom-4 right-4 z-50 transition-all duration-300 ease-in-out"
+<div class="music-player fixed bottom-4 left-4 z-[70]"
+     use:floatingPanel={{ key: "music-player-position-v1", side: "left" }}
      class:expanded={isExpanded}
      class:hidden-mode={isHidden}>
-
-    <!-- 隐藏状态的小圆球 -->
-    <div class="orb-player w-12 h-12 bg-[var(--primary)] rounded-full shadow-lg cursor-pointer transition-all duration-500 ease-in-out flex items-center justify-center hover:scale-110 active:scale-95"
-         class:opacity-0={!isHidden}
-         class:scale-0={!isHidden}
-         class:pointer-events-none={!isHidden}
-         on:click={toggleHidden}
-         on:keydown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-				toggleHidden();
-            }
-         }}
-         role="button"
-         tabindex="0"
-         aria-label={i18n(Key.musicPlayerShow)}>
-        {#if isLoading}
-            <Icon icon="eos-icons:loading" class="text-white text-lg" />
-        {:else if isPlaying}
-            <div class="flex space-x-0.5">
-                <div class="w-0.5 h-3 bg-white rounded-full animate-pulse"></div>
-                <div class="w-0.5 h-4 bg-white rounded-full animate-pulse" style="animation-delay: 150ms;"></div>
-                <div class="w-0.5 h-2 bg-white rounded-full animate-pulse" style="animation-delay: 300ms;"></div>
-            </div>
-        {:else}
-            <Icon icon="material-symbols:music-note" class="text-white text-lg" />
-        {/if}
+    <div class="music-dock-toolbar" hidden={isHidden}>
+        <button type="button" data-floating-drag class="music-move" aria-label="移動音樂播放器；方向鍵移動，Home 重設" title="拖曳移動；方向鍵移動，Home 重設">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="9" cy="5" r="2"/><circle cx="15" cy="5" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="9" cy="19" r="2"/><circle cx="15" cy="19" r="2"/></svg>
+        </button>
+        <button type="button" data-floating-reset class="music-reset">重設位置</button><button type="button" class="music-reset" on:click={toggleHidden} title="收合成專輯封面">收合</button>
     </div>
+
+    <!-- 收合後只保留專輯封面；點擊展開，拖曳移動。 -->
+    <button type="button" hidden={!isHidden} class="orb-player" data-floating-drag
+            on:click={toggleHidden} aria-label="展開音樂播放器；拖曳封面或方向鍵移動，Home 重設位置"
+            aria-expanded={!isHidden} title="點擊展開播放器；拖曳封面移動">
+        <img src={getAssetPath(currentSong.cover || "/favicon/favicon.ico")}
+             alt={currentSong.title} draggable="false"
+             on:error={(event) => {
+                 const img = event.currentTarget;
+                 if (!img.src.endsWith("/favicon/favicon.ico")) img.src = "/favicon/favicon.ico";
+             }} />
+    </button>
     <!-- 收缩状态的迷你播放器（封面圆形） -->
-    <div class="mini-player card-base bg-[var(--float-panel-bg)] shadow-xl rounded-2xl p-3 transition-all duration-500 ease-in-out"
+    <div hidden={isExpanded || isHidden} class="mini-player card-base bg-[var(--float-panel-bg)] shadow-xl rounded-2xl p-3 transition-all duration-500 ease-in-out"
          class:opacity-0={isExpanded || isHidden}
          class:scale-95={isExpanded || isHidden}
          class:pointer-events-none={isExpanded || isHidden}>
@@ -553,7 +568,7 @@ onDestroy(() => {
             <div class="flex items-center gap-1">
                 <button class="btn-plain w-8 h-8 rounded-lg flex items-center justify-center"
                         on:click|stopPropagation={toggleHidden}
-                        title={i18n(Key.musicPlayerHide)}>
+                        title="收合成專輯封面" aria-label="收合成專輯封面">
                     <Icon icon="material-symbols:visibility-off" class="text-lg" />
                 </button>
                 <button class="btn-plain w-8 h-8 rounded-lg flex items-center justify-center"
@@ -564,7 +579,7 @@ onDestroy(() => {
         </div>
     </div>
     <!-- 展开状态的完整播放器（封面圆形） -->
-    <div class="expanded-player card-base bg-[var(--float-panel-bg)] shadow-xl rounded-2xl p-4 transition-all duration-500 ease-in-out"
+    <div hidden={!isExpanded || isHidden} class="expanded-player card-base bg-[var(--float-panel-bg)] shadow-xl rounded-2xl p-4 transition-all duration-500 ease-in-out"
          class:opacity-0={!isExpanded}
          class:scale-95={!isExpanded}
          class:pointer-events-none={!isExpanded}>
@@ -585,7 +600,7 @@ onDestroy(() => {
             <div class="flex items-center gap-1">
                 <button class="btn-plain w-8 h-8 rounded-lg flex items-center justify-center"
                         on:click={toggleHidden}
-                        title={i18n(Key.musicPlayerHide)}>
+                        title="收合成專輯封面" aria-label="收合成專輯封面">
                     <Icon icon="material-symbols:visibility-off" class="text-lg" />
                 </button>
                 <button class="btn-plain w-8 h-8 rounded-lg flex items-center justify-center"
@@ -700,7 +715,7 @@ onDestroy(() => {
         </div>
     </div>
     {#if showPlaylist}
-        <div class="playlist-panel float-panel fixed bottom-20 right-4 w-80 max-h-96 overflow-hidden z-50"
+        <div class="playlist-panel float-panel w-full overflow-hidden"
              transition:slide={{ duration: 300, axis: 'y' }}>
             <div class="playlist-header flex items-center justify-between p-4 border-b border-[var(--line-divider)]">
                 <h3 class="text-lg font-semibold text-90">{i18n(Key.musicPlayerPlaylist)}</h3>
@@ -751,57 +766,9 @@ onDestroy(() => {
 </div>
 
 <style>
-.orb-player {
-	position: relative;
-	backdrop-filter: blur(10px);
-	-webkit-backdrop-filter: blur(10px);
-}
-.orb-player::before {
-	content: '';
-	position: absolute;
-	inset: -0.125rem;
-	background: linear-gradient(45deg, var(--primary), transparent, var(--primary));
-	border-radius: 50%;
-	z-index: -1;
-	opacity: 0;
-	transition: opacity 0.3s ease;
-}
-.orb-player:hover::before {
-	opacity: 0.3;
-	animation: rotate 2s linear infinite;
-}
-.orb-player .animate-pulse {
-	animation: musicWave 1.5s ease-in-out infinite;
-}
-@keyframes rotate {
-	from { transform: rotate(0deg); }
-	to { transform: rotate(360deg); }
-}
-@keyframes musicWave {
-	0%, 100% { transform: scaleY(0.5); }
-	50% { transform: scaleY(1); }
-}
-.music-player.hidden-mode {
-	width: 3rem;
-	height: 3rem;
-}
-.music-player {
-    max-width: 20rem;
-    user-select: none;
-}
-.mini-player {
-    width: 17.5rem;
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    /*left: 0;*/
-}
-.expanded-player {
-    width: 20rem;
-    position: absolute;
-    bottom: 0;
-    right: 0;
-}
+.orb-player { display: block; width: 56px; height: 56px; padding: 0; border: 0; border-radius: 50%; overflow: hidden; cursor: grab; touch-action: none; background: var(--card-bg); }
+.orb-player img { display: block; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.music-player[data-dragging="true"] .orb-player { cursor: grabbing; }
 
 .animate-pulse {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -820,27 +787,8 @@ onDestroy(() => {
     transition: transform 0.2s ease;
 }
 @media (max-width: 768px) {
-    .music-player {
-        max-width: 280px !important;
-        /*left: 0.5rem !important;*/
-        bottom: 0.5rem !important;
-        right: 0.5rem !important;
-	}
-    .mini-player {
-        width: 280px;
-    }
-    .music-player.expanded {
-        width: calc(100vw - 16px);
-        max-width: none;
-        /*left: 0.5rem !important;*/
-        right: 0.5rem !important;
-	}
-    .playlist-panel {
-        width: calc(100vw - 16px) !important;
-        /*left: 0.5rem !important;*/
-        right: 0.5rem !important;
-        max-width: none;
-	}
+
+
     .controls {
         gap: 8px;
 	}
@@ -854,10 +802,7 @@ onDestroy(() => {
 	}
 }
 @media (max-width: 480px) {
-    .music-player {
-        max-width: 260px;
-	}
-    .song-title {
+.song-title {
         font-size: 14px;
 	}
     .song-artist {
@@ -930,5 +875,21 @@ button.bg-\[var\(--primary\)\] {
     box-shadow: 0 0 0 2px var(--primary);
 	border: none;
 }
+
+/* 浮動容器使用實際內容尺寸，收合時不留下透明的可點擊控制項。 */
+.music-player { width: 320px; max-width: calc(100vw - 32px); max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain; background: var(--card-bg); border: 1px solid var(--line-divider); border-radius: 16px; box-shadow: 0 6px 24px #0002; user-select: none; }
+.music-player.hidden-mode { width: 56px; height: 56px; padding: 0; border: 0; border-radius: 50%; overflow: visible; background: transparent; }
+.music-player [hidden] { display: none !important; }
+.music-dock-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 4px; color: var(--primary); }
+.hidden-mode .music-dock-toolbar { padding: 0; }
+.music-move { width: 44px; height: 44px; display: grid; place-items: center; font-size: 22px; border-radius: 10px; cursor: grab; touch-action: none; }
+.music-player[data-dragging="true"] .music-move { cursor: grabbing; }
+.music-reset { padding: 0 12px; min-height: 44px; font-size: 13px; border-radius: 10px; }
+.music-move:hover, .music-reset:hover { background: var(--btn-regular-bg); }
+.music-player button:focus-visible, .orb-player:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.mini-player, .expanded-player { position: relative; width: 100%; box-shadow: none; }
+.playlist-panel { position: relative; width: 100%; max-height: 40dvh; }
+.playlist-content { max-height: 28dvh; overscroll-behavior: contain; }
+@media (prefers-reduced-motion: reduce) { .music-player :global(*) { animation: none !important; transition: none !important; } }
 </style>
 {/if}

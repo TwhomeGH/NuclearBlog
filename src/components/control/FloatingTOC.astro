@@ -1,548 +1,161 @@
 ---
 import { Icon } from "astro-icon/components";
 import { siteConfig } from "../../config";
-
-const tocDepth = siteConfig.toc.depth;
-const useJapaneseBadge = siteConfig.toc.useJapaneseBadge;
 ---
 
-<div
-	class="floating-toc-wrapper"
-	data-depth={tocDepth}
-	data-japanese-badge={useJapaneseBadge}
->
-	<button
-		id="floating-toc-btn"
-		class="floating-toc-btn btn-card"
-		aria-label="Table of Contents"
-	>
-		<svg
-			class="progress-ring"
-			width="100%"
-			height="100%"
-			viewBox="0 0 100 100"
-		>
-			<circle
-				class="progress-ring-circle"
-				cx="50"
-				cy="50"
-				r="40"
-				fill="transparent"></circle>
-		</svg>
-		<div class="btn-icon">
-			<Icon
-				name="material-symbols:format-list-bulleted-rounded"
-				class="text-2xl"
-			/>
-		</div>
-	</button>
-	<div id="floating-toc-panel" class="floating-toc-panel">
-		<div class="floating-toc-panel-content" id="floating-toc-content"></div>
+<floating-toc hidden data-depth={siteConfig.toc.depth} data-japanese-badge={siteConfig.toc.useJapaneseBadge}>
+	<div class="toc-toolbar">
+		<button type="button" class="toc-toggle" aria-label="開啟文章目錄" aria-expanded="false" aria-controls="reading-toc-panel">
+			<Icon name="material-symbols:format-list-bulleted-rounded" />
+			<span class="toc-label"><span>目錄</span><small data-progress title="閱讀進度">0%</small></span>
+		</button>
+		<button type="button" class="toc-move" data-floating-drag aria-label="移動目錄；方向鍵移動，Home 重設" title="拖曳移動；方向鍵移動，Home 重設">
+			<Icon name="material-symbols:drag-indicator" />
+		</button>
 	</div>
-</div>
+	<section id="reading-toc-panel" hidden aria-label="文章目錄">
+		<div class="toc-panel-header"><span>跳到章節</span><button type="button" data-floating-reset>重設位置</button></div>
+		<nav aria-label="文章章節" class="toc-links"></nav>
+	</section>
+</floating-toc>
 
 <style>
-	.floating-toc-wrapper {
-		position: fixed;
-		right: 6rem;
-		bottom: 15rem;
-		z-index: 50;
-		pointer-events: auto;
-		transform: translateX(5rem);
-		display: none;
-		transition:
-			opacity 0.3s ease,
-			transform 0.3s ease;
-	}
-
-	.floating-toc-wrapper.active-toc {
-		display: block;
-	}
-
-	.floating-toc-btn {
-		width: 3.75rem;
-		height: 3.75rem;
-		border-radius: 1rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: var(--primary);
-		position: relative;
-		background: var(--card-bg);
-	}
-
-	.floating-toc-btn.active {
-		background: var(--btn-card-bg-active);
-	}
-
-	.progress-ring {
-		position: absolute;
-		top: 0;
-		left: 0;
-		transform: rotate(-90deg);
-		pointer-events: none;
-		z-index: 0;
-	}
-
-	.progress-ring-circle {
-		stroke: var(--primary);
-		stroke-width: 5;
-		stroke-dasharray: 251.2;
-		stroke-dashoffset: 251.2;
-		transition: stroke-dashoffset 0.1s linear;
-		stroke-linecap: round;
-	}
-
-	.btn-icon {
-		z-index: 1;
-		position: relative;
-	}
-
-	.floating-toc-panel {
-		position: absolute;
-		bottom: 4.5rem;
-		right: 0;
-		width: 18rem;
-		max-height: 60vh;
-		background: var(--card-bg);
-		border: 1px solid var(--line-color);
-		border-radius: 1rem;
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-		overflow: hidden;
-		opacity: 0;
-		visibility: hidden;
-		transform: translateY(10px) scale(0.95);
-		transition: all 0.2s ease;
-		pointer-events: none;
-	}
-
-	.floating-toc-panel.show {
-		opacity: 1;
-		visibility: visible;
-		transform: translateY(0) scale(1);
-		pointer-events: auto;
-	}
-
-	.floating-toc-panel-content {
-		padding: 0.75rem;
-		max-height: 60vh;
-		overflow-y: auto;
-		overflow-x: hidden;
-	}
-
-	.floating-toc-panel-content::-webkit-scrollbar {
-		width: 4px;
-	}
-
-	.floating-toc-panel-content::-webkit-scrollbar-track {
-		background: transparent;
-	}
-
-	.floating-toc-panel-content::-webkit-scrollbar-thumb {
-		background: var(--line-color);
-		border-radius: 2px;
-	}
-
-	@media (max-width: 1560px) {
-		.floating-toc-btn {
-			box-shadow:
-				0 0 0 1px var(--btn-regular-bg),
-				0 0 1em var(--btn-regular-bg);
-		}
-	}
-
-	@media (max-width: 768px) {
-		.floating-toc-wrapper {
-			transform: none;
-			right: 2rem;
-			bottom: 6rem;
-			opacity: 0.6;
-		}
-
-		.floating-toc-wrapper:active,
-		.floating-toc-wrapper.active {
-			opacity: 1;
-		}
-
-		.floating-toc-panel {
-			width: 85vw;
-			max-width: 20rem;
-			right: 0;
-			bottom: 4.5rem;
-		}
-	}
-
-	:global(.floating-toc-item) {
-		display: flex;
-		align-items: center;
-		padding: 0.5rem;
-		color: var(--text-secondary);
-		text-decoration: none;
-		font-size: 0.9rem;
-		line-height: 1.5;
-		border-radius: 0.5rem;
-		transition: all 0.2s;
-	}
-
-	:global(.floating-toc-item:hover) {
-		background-color: var(--btn-regular-bg);
-		color: var(--primary);
-	}
-
-	:global(.floating-toc-item.active) {
-		background-color: var(--btn-card-bg-active);
-		color: var(--primary);
-		font-weight: 500;
-	}
-
-	:global(.floating-toc-badge) {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 1.25rem;
-		height: 1.25rem;
-		background: var(--btn-regular-bg);
-		color: var(--primary);
-		border-radius: 0.25rem;
-		font-size: 0.75rem;
-		font-weight: bold;
-		margin-right: 0.5rem;
-		flex-shrink: 0;
-	}
-
-	:global(.floating-toc-dot) {
-		width: 0.5rem;
-		height: 0.5rem;
-		background: var(--line-divider);
-		border-radius: 50%;
-		margin-right: 0.75rem;
-		margin-left: 0.375rem;
-		flex-shrink: 0;
-	}
-
-	:global(.floating-toc-dot-small) {
-		width: 0.35rem;
-		height: 0.35rem;
-		background: var(--line-divider);
-		border-radius: 50%;
-		margin-right: 0.75rem;
-		margin-left: 0.45rem;
-		flex-shrink: 0;
-	}
-
-	:global(.floating-toc-item.active .floating-toc-dot),
-	:global(.floating-toc-item.active .floating-toc-dot-small) {
-		background: var(--primary);
-	}
-
-	:global(.floating-toc-text) {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
+	floating-toc { position: fixed; right: 16px; bottom: 16px; z-index: 70; display: block; width: 176px; max-width: calc(100vw - 32px); background: var(--card-bg); color: var(--primary); border: 1px solid var(--line-divider); border-radius: 16px; box-shadow: 0 6px 24px #0002; }
+	floating-toc[hidden], [hidden] { display: none !important; }
+	floating-toc[data-open="true"] { width: 320px; }
+	.toc-toolbar { display: flex; justify-content: space-between; padding: 4px; }
+	button { min-height: 44px; border-radius: 10px; }
+	button:hover { background: var(--btn-regular-bg); }
+	button:focus-visible, :global(.toc-link:focus-visible) { outline: 2px solid var(--primary); outline-offset: -2px; }
+	.toc-toggle { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; padding: 0 8px; text-align: left; font-size: 14px; line-height: 1.2; }
+	.toc-toggle svg { width: 22px; height: 22px; }
+	.toc-label { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+	small { display: inline-flex; align-items: center; justify-content: center; min-width: 4ch; padding: 4px 5px; border-radius: 999px; background: var(--btn-regular-bg); font-size: 11px; line-height: 1; font-variant-numeric: tabular-nums; }
+	.toc-move { width: 44px; flex-shrink: 0; display: grid; place-items: center; cursor: grab; touch-action: none; user-select: none; }
+	.toc-move svg { width: 22px; height: 22px; }
+	floating-toc[data-dragging="true"] .toc-move { cursor: grabbing; }
+	.toc-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-top: 1px solid var(--line-divider); font-size: 13px; }
+	.toc-panel-header button { padding: 0 8px; }
+	.toc-links { max-height: min(55dvh, calc(100dvh - 150px)); overflow-y: auto; overscroll-behavior: contain; padding: 4px 8px 12px; }
+	:global(.toc-link) { display: block; padding: 10px 8px; padding-left: calc(8px + var(--toc-level) * 12px); min-height: 44px; border-radius: 8px; color: var(--content-meta); font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+	:global(.toc-link:hover), :global(.toc-link[aria-current="location"]) { background: var(--btn-regular-bg); color: var(--primary); }
+	:global(.toc-link[aria-current="location"]) { font-weight: 700; box-shadow: inset 3px 0 var(--primary); }
 </style>
 
 <script>
-	class FloatingTOC {
-		private btn: HTMLElement | null;
-		private panel: HTMLElement | null;
-		private content: HTMLElement | null;
-		private wrapper: HTMLElement | null;
-		private isOpen = false;
-		private observer: MutationObserver | null = null;
+	import { floatingPanel } from "../../utils/floating-panel";
+
+	class ReadingTOC extends HTMLElement {
+		private events?: AbortController;
+		private observer?: MutationObserver;
+		private dock?: ReturnType<typeof floatingPanel>;
+		private frame = 0;
+		private refreshFrame = 0;
 		private headings: HTMLElement[] = [];
+		private links: HTMLAnchorElement[] = [];
+		private signature = "";
+		private article: HTMLElement | null = null;
+		private open = false;
+		private toggle!: HTMLButtonElement;
+		private panel!: HTMLElement;
+		private nav!: HTMLElement;
 
-		constructor() {
-			this.btn = document.getElementById("floating-toc-btn");
-			this.panel = document.getElementById("floating-toc-panel");
-			this.content = document.getElementById("floating-toc-content");
-			this.wrapper = document.querySelector(".floating-toc-wrapper");
-
-			this.init();
-		}
-
-		private init() {
-			window.addEventListener(
-				"scroll",
-				() => {
-					this.updateProgress();
-					this.updateActiveHeading();
-				},
-				{ passive: true },
-			);
-
-			window.addEventListener(
-				"resize",
-				() => {
-					this.updateActiveHeading();
-					this.updateProgress();
-				},
-				{ passive: true },
-			);
-
-			this.bindEvents();
-			this.generateTOC();
-			this.observeContent();
-			this.updateProgress();
-		}
-
-		private observeContent() {
-			const contentWrapper = document.getElementById("post-container");
-			if (contentWrapper) {
-				this.observer = new MutationObserver(() => {
-					this.generateTOC();
-					this.updateProgress();
-				});
-				this.observer.observe(contentWrapper, {
-					childList: true,
-					subtree: true,
-				});
-			}
-		}
-
-		private updateProgress() {
-			if (!this.btn) return;
-
-			const scrollTop =
-				window.scrollY || document.documentElement.scrollTop;
-			const docHeight =
-				document.documentElement.scrollHeight -
-				document.documentElement.clientHeight;
-			const scrollPercent = docHeight > 0 ? scrollTop / docHeight : 0;
-
-			const circle = this.btn.querySelector(
-				".progress-ring-circle",
-			) as SVGCircleElement;
-			if (circle) {
-				const radius = circle.r.baseVal.value;
-				const circumference = radius * 2 * Math.PI;
-				const offset = Math.max(
-					0,
-					Math.min(
-						circumference,
-						circumference - scrollPercent * circumference,
-					),
-				);
-				circle.style.strokeDashoffset = offset.toString();
-			}
-		}
-
-		private updateActiveHeading() {
-			if (!this.content || this.headings.length === 0) return;
-			const scrollY = window.scrollY;
-			const offsetTop = 150;
-
-			let activeIndex = -1;
-			for (let i = 0; i < this.headings.length; i++) {
-				const heading = this.headings[i];
-				if (
-					heading.getBoundingClientRect().top + scrollY <
-					scrollY + offsetTop
-				) {
-					activeIndex = i;
-				} else {
-					break;
-				}
-			}
-
-			const links = Array.from(
-				this.content.querySelectorAll(".floating-toc-item"),
-			);
-			links.forEach((link, index) => {
-				if (index === activeIndex) {
-					link.classList.add("active");
-					if (this.isOpen) {
-						const panelContent = this.content;
-						if (panelContent) {
-							const linkEl = link as HTMLElement;
-							const panelRect =
-								panelContent.getBoundingClientRect();
-							const linkRect = linkEl.getBoundingClientRect();
-							if (
-								linkRect.top < panelRect.top ||
-								linkRect.bottom > panelRect.bottom
-							) {
-								linkEl.scrollIntoView({ block: "nearest" });
-							}
-						}
-					}
-				} else {
-					link.classList.remove("active");
-				}
+		connectedCallback() {
+			this.events = new AbortController();
+			const options = { signal: this.events.signal };
+			this.toggle = this.querySelector(".toc-toggle")!;
+			this.panel = this.querySelector("section")!;
+			this.nav = this.querySelector("nav")!;
+			this.dock = floatingPanel(this, { key: "reading-toc-position-v1", side: "right" });
+			this.toggle.addEventListener("click", () => this.setOpen(!this.open), options);
+			this.addEventListener("keydown", (event) => {
+				if (event.key === "Escape" && this.open) { this.setOpen(false); this.toggle.focus(); }
+			}, options);
+			document.addEventListener("pointerdown", (event) => {
+				if (this.open && !this.contains(event.target as Node)) this.setOpen(false);
+			}, options);
+			this.nav.addEventListener("click", (event) => {
+				const link = (event.target as Element).closest<HTMLAnchorElement>("a[data-index]");
+				if (!link) return;
+				const heading = this.headings[Number(link.dataset.index)];
+				if (!heading) return;
+				event.preventDefault();
+				this.setOpen(false);
+				const top = Math.max(0, heading.getBoundingClientRect().top + window.scrollY - 96);
+				window.scrollTo({ top, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+				history.replaceState(history.state, "", "#" + encodeURIComponent(heading.id));
+				this.toggle.focus({ preventScroll: true });
+			}, options);
+			window.addEventListener("scroll", this.queueUpdate, { ...options, passive: true });
+			window.addEventListener("resize", this.queueUpdate, options);
+			document.addEventListener("reading-tool:open", (event) => {
+				if ((event as CustomEvent).detail !== "toc") this.setOpen(false);
+			}, options);
+			document.addEventListener("DOMContentLoaded", this.refresh, options);
+			document.addEventListener("swup:page:view", this.refresh, options);
+			// 監看 main 的替換與解密內容；不監看目錄自身，避免更新迴圈。
+			this.observer = new MutationObserver((records) => {
+				if (!records.some(r => (r.target instanceof Element && r.target.closest("main")) || [...r.addedNodes, ...r.removedNodes].some(n => n instanceof Element && (n.matches("main") || n.querySelector("main"))))) return;
+				cancelAnimationFrame(this.refreshFrame);
+				this.refreshFrame = requestAnimationFrame(this.refresh);
 			});
+			this.observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+			this.refresh();
 		}
-
-		private generateTOC() {
-			const container = document.getElementById("post-container");
-
-			if (!container) {
-				this.wrapper?.classList.remove("active-toc");
-				this.wrapper?.classList.add("no-toc");
-				return;
-			}
-
-			const allHeadings = container.querySelectorAll(
-				"h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]",
-			);
-
-			if (allHeadings.length === 0) {
-				this.wrapper?.classList.remove("active-toc");
-				this.wrapper?.classList.add("no-toc");
-				this.headings = [];
-				return;
-			}
-
-			this.wrapper?.classList.remove("no-toc");
-			this.wrapper?.classList.add("active-toc");
-			this.headings = [];
-
-			const maxLevel = parseInt(this.wrapper?.dataset.depth || "3");
-			const useJapaneseBadge =
-				this.wrapper?.dataset.japaneseBadge === "true";
-
-			const japaneseKatakana = [
-				"ア",
-				"イ",
-				"ウ",
-				"エ",
-				"オ",
-				"カ",
-				"キ",
-				"ク",
-				"ケ",
-				"コ",
-				"サ",
-				"シ",
-				"ス",
-				"セ",
-				"ソ",
-				"タ",
-				"チ",
-				"ツ",
-				"テ",
-				"ト",
-				"ナ",
-				"ニ",
-				"ヌ",
-				"ネ",
-				"ノ",
-				"ハ",
-				"ヒ",
-				"フ",
-				"ヘ",
-				"ホ",
-			];
-
-			let minLevel = 6;
-			allHeadings.forEach((h) => {
-				const level = parseInt(h.tagName[1]);
-				if (level < minLevel) minLevel = level;
-			});
-
-			let html = "";
-			let h1Count = 0;
-			allHeadings.forEach((heading) => {
-				const level = parseInt(heading.tagName[1]);
-
-				if (level >= minLevel + maxLevel) return;
-
-				this.headings.push(heading as HTMLElement);
-
-				const indent = (level - minLevel) * 1;
-				let badge = "";
-
-				if (level === minLevel) {
-					h1Count++;
-					const badgeText =
-						useJapaneseBadge &&
-						h1Count - 1 < japaneseKatakana.length
-							? japaneseKatakana[h1Count - 1]
-							: h1Count.toString();
-					badge = `<span class="floating-toc-badge">${badgeText}</span>`;
-				} else if (level === minLevel + 1) {
-					badge = '<span class="floating-toc-dot"></span>';
-				} else {
-					badge = '<span class="floating-toc-dot-small"></span>';
-				}
-
-				const text = (heading.textContent || "").replace(/#+\s*$/, "");
-				html += `<a href="#${heading.id}" class="floating-toc-item" style="padding-left: ${0.5 + indent}rem" data-level="${level - minLevel}">${badge}<span class="floating-toc-text">${text}</span></a>`;
-			});
-
-			if (this.content) {
-				this.content.innerHTML = html;
-			}
-
-			this.updateActiveHeading();
+		disconnectedCallback() {
+			this.events?.abort(); this.observer?.disconnect(); this.dock?.destroy();
+			cancelAnimationFrame(this.frame); cancelAnimationFrame(this.refreshFrame);
 		}
-
-		private bindEvents() {
-			this.btn?.addEventListener("click", (e) => {
-				e.stopPropagation();
-				this.toggle();
-			});
-			document.addEventListener("click", (e) => {
-				if (this.isOpen && !this.wrapper?.contains(e.target as Node)) {
-					this.close();
-				}
-			});
-			this.content?.addEventListener("click", (e) => {
-				const link = (e.target as HTMLElement).closest("a");
-				if (link) {
-					e.preventDefault();
-					const id = link.getAttribute("href")?.slice(1);
-					if (id) {
-						const element = document.getElementById(id);
-						if (element) {
-							const top =
-								element.getBoundingClientRect().top +
-								window.scrollY -
-								80;
-							window.scrollTo({ top, behavior: "smooth" });
-							this.close();
-						}
-					}
-				}
-			});
-			document.addEventListener("keydown", (e) => {
-				if (e.key === "Escape" && this.isOpen) this.close();
-			});
-			if ((window as any).swup) {
-				(window as any).swup.hooks.on("page:view", () => {
-					setTimeout(() => this.reinit(), 200);
-				});
-			}
+		private setOpen(open: boolean) {
+			if (open) document.dispatchEvent(new CustomEvent("reading-tool:open", { detail: "toc" }));
+			this.open = open;
+			this.dataset.open = String(open);
+			this.panel.hidden = !open;
+			this.toggle.setAttribute("aria-expanded", String(open));
+			this.toggle.setAttribute("aria-label", open ? "收合文章目錄" : "開啟文章目錄");
 		}
-
-		private toggle() {
-			this.isOpen ? this.close() : this.open();
-		}
-
-		private open() {
-			this.isOpen = true;
-			this.panel?.classList.add("show");
-			this.btn?.classList.add("active");
-			this.wrapper?.classList.add("active");
-		}
-
-		private close() {
-			this.isOpen = false;
-			this.panel?.classList.remove("show");
-			this.btn?.classList.remove("active");
-			this.wrapper?.classList.remove("active");
-		}
-
-		private reinit() {
-			if (this.observer) {
-				this.observer.disconnect();
-			}
-			this.close();
-			this.generateTOC();
-			this.observeContent();
-			this.updateProgress();
+		private refresh = () => {
+			const article = document.getElementById("post-container");
+			const all = Array.from(article?.querySelectorAll<HTMLElement>("h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]") || []);
+			const signature = JSON.stringify(all.map(h => [h.id, h.textContent]));
+			if (article === this.article && signature === this.signature) return;
+			this.article = article; this.signature = signature;
+			this.setOpen(false);
+			const min = Math.min(...all.map(h => Number(h.tagName[1])));
+			const depth = Math.max(1, Number(this.dataset.depth) || 3);
+			this.headings = all.filter(h => Number(h.tagName[1]) < min + depth);
+			this.hidden = this.headings.length === 0;
+			this.links = [];
+			const fragment = document.createDocumentFragment();
+			let number = 0;
+			const kana = [..."アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホ"];
+			this.headings.forEach((heading, index) => {
+				const level = Number(heading.tagName[1]) - min;
+				const link = document.createElement("a");
+				link.className = "toc-link";
+				link.href = "#" + encodeURIComponent(heading.id);
+				link.dataset.index = String(index);
+				link.style.setProperty("--toc-level", String(level));
+				const text = heading.cloneNode(true) as HTMLElement;
+				text.querySelectorAll(".anchor").forEach(anchor => anchor.remove());
+				const badge = level === 0 ? (this.dataset.japaneseBadge === "true" ? kana[number++] || String(number) : String(++number)) + ". " : "";
+				link.textContent = badge + (text.textContent || "").trim();
+				fragment.append(link); this.links.push(link);
+			});
+			this.nav.replaceChildren(fragment);
+			this.update();
+		};
+		private queueUpdate = () => { cancelAnimationFrame(this.frame); this.frame = requestAnimationFrame(() => this.update()); };
+		private update() {
+			if (!this.article || !this.headings.length) return;
+			let current = 0;
+			this.headings.forEach((heading, i) => { if (heading.getBoundingClientRect().top <= 120) current = i; });
+			this.links.forEach((link, i) => { if (i === current) link.setAttribute("aria-current", "location"); else link.removeAttribute("aria-current"); });
+			const rect = this.article.getBoundingClientRect();
+			const total = Math.max(1, rect.height - window.innerHeight);
+			const progress = Math.round(Math.max(0, Math.min(1, -rect.top / total)) * 100);
+			this.querySelector("[data-progress]")!.textContent = progress + "%";
 		}
 	}
-
-	document.addEventListener("DOMContentLoaded", () => new FloatingTOC());
-	document.addEventListener("swup:page:view", () => new FloatingTOC());
+	if (!customElements.get("floating-toc")) customElements.define("floating-toc", ReadingTOC);
 </script>
