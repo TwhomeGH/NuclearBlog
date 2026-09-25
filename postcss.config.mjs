@@ -1,11 +1,8 @@
 import postcssImport from "postcss-import";
 import tailwindcss from "tailwindcss";
 import postcssNesting from "tailwindcss/nesting/index.js";
+import autoprefixer from "autoprefixer";
 
 export default {
-	plugins: {
-		"postcss-import": postcssImport, // to combine multiple css files
-		"tailwindcss/nesting": postcssNesting,
-		tailwindcss: tailwindcss,
-	},
+	plugins: [postcssImport(), postcssNesting(), tailwindcss(), autoprefixer()],
 };

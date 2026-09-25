@@ -601,7 +601,7 @@ const transparentClass = shouldEnableTransparency
 <div id="banner-wrapper" class={`absolute z-10 w-full transition duration-700 overflow-hidden ${mobileNonHomeBannerClass}`} style={`top: -${BANNER_HEIGHT_EXTEND}vh`}>
 
     {siteConfig.banner.carousel?.enable && ((bannerImages.desktop && Array.isArray(bannerImages.desktop) && bannerImages.desktop.length > 1) || (bannerImages.mobile && Array.isArray(bannerImages.mobile) && bannerImages.mobile.length > 1)) ? (
-        <!-- Carousel mode for multiple images -->
+        /* Carousel mode for multiple images */
         <div id="banner-carousel" class="relative h-full w-full">
             <ul class="carousel-list h-full w-full">
                 {Math.max(
@@ -648,7 +648,7 @@ const transparentClass = shouldEnableTransparency
             </ul>
         </div>
     ) : (
-        <!-- Single image mode -->
+        /* Single image mode */
         <div id="banner-single-container" class="relative h-full w-full">
             <script is:inline define:vars={{ desktopImages: bannerImages.desktop, mobileImages: bannerImages.mobile, position: siteConfig.banner.position }}>
                 (function() {
@@ -1731,3 +1731,5 @@ body.wallpaper-transparent #toc-inner-wrapper:has(table-of-contents[data-loaded=
         max-height: 40px !important;
     }
 }
+
+</style>
