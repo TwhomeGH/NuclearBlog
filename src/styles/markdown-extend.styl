@@ -256,13 +256,12 @@ a.card-github.fetch-error
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1)
 
 .mermaid-wrapper
-  padding: 1.5rem
+  padding: 0.75rem
   text-align: center
 
 .mermaid
-  display: flex
-  justify-content: center
-  align-items: center
+  display: block
+  width: 100%
   min-height: 100px
   font-family: inherit
   position: relative;
@@ -335,21 +334,52 @@ a.card-github.fetch-error
     max-height: 400px
 
 
+// 圖表先適合全文寬度，工具列獨立排列，不遮住圖表。
 .mermaid-zoom-wrapper
-  transform-origin: 0 0;
-  transition: transform 120ms ease-out;
-  will-change: transform;
-  cursor: grab;
-  background: transparent;
+  width: 100%
+  margin: 0
 
-.mermaid-zoom-wrapper:active
-  cursor: grabbing;
+.mermaid-viewport
+  width: 100%
+  overflow: auto
+  touch-action: auto
+
+  &:not(.is-locked)
+    cursor: grab
+
+  &:not(.is-locked):active
+    cursor: grabbing
 
 .mermaid-zoom-controls
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: flex;
-  gap: 6px;
-  z-index: 30;
-  user-select: none;
+  display: flex
+  align-items: center
+  justify-content: flex-end
+  flex-wrap: wrap
+  gap: 6px
+  padding: 4px 0 12px
+
+  button
+    min-width: 44px
+    min-height: 44px
+    padding: 0 12px
+
+  button:disabled
+    opacity: 0.4
+    cursor: default
+
+  span
+    min-width: 4ch
+    font-size: 0.8rem
+    font-variant-numeric: tabular-nums
+
+.mermaid .mermaid-rendered-svg
+  display: block
+  width: 100%
+  height: auto
+  max-height: none
+  margin: 0
+  border-radius: 0
+
+.mermaid-viewport:focus-visible, .mermaid-zoom-controls button:focus-visible
+  outline: 2px solid var(--primary)
+  outline-offset: -2px

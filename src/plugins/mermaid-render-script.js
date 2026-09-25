@@ -88,145 +88,102 @@
 		});
 	}
 
-	// 缩放平移
+	// 預設適合文章寬度並鎖定；解除鎖定後才允許移動。
 	function attachZoomControls(element, diagramElement) {
 		if (element.__zoomAttached) return;
 		element.__zoomAttached = true;
-
+		const viewport = document.createElement("div");
+		viewport.className = "mermaid-viewport";
+		viewport.tabIndex = 0;
+		viewport.setAttribute("aria-label", "圖表；預設鎖定，解除鎖定後可移動，按 Escape 適合寬度並鎖定");
 		const wrapper = document.createElement("div");
 		wrapper.className = "mermaid-zoom-wrapper";
-
-		const diagramParent = diagramElement.parentNode;
 		wrapper.appendChild(diagramElement);
-		diagramParent.appendChild(wrapper);
-
-		let scale = 1;
-		let tx = 0;
-		let ty = 0;
-		const MIN_SCALE = 0.2;
-		const MAX_SCALE = 6;
-
-		function applyTransform() {
-			wrapper.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
-		}
+		viewport.appendChild(wrapper);
 		const controls = document.createElement("div");
 		controls.className = "mermaid-zoom-controls";
-		controls.append(
-			createZoomButton("zoom-in", "Zoom in", "+"),
-			createZoomButton("zoom-out", "Zoom out", "−"),
-			createZoomButton("reset", "Reset", "⤾"),
-		);
-		element.appendChild(controls);
-
-		controls.addEventListener("click", (ev) => {
-			const action =
-				ev.target.getAttribute && ev.target.getAttribute("data-action");
-			if (!action) return;
-
-			switch (action) {
-				case "zoom-in":
-					scale = Math.min(MAX_SCALE, +(scale * 1.2).toFixed(3));
-					applyTransform();
-					break;
-				case "zoom-out":
-					scale = Math.max(MIN_SCALE, +(scale / 1.2).toFixed(3));
-					applyTransform();
-					break;
-				case "reset":
-					scale = 1;
-					tx = 0;
-					ty = 0;
-					applyTransform();
-					break;
-			}
+		const status = document.createElement("span");
+		status.setAttribute("aria-live", "polite");
+		const zoomIn = createZoomButton("zoom-in", "放大圖表", "+");
+		const zoomOut = createZoomButton("zoom-out", "縮小圖表", "−");
+		const lockButton = createZoomButton("lock", "解除鎖定圖表", "解除鎖定");
+		controls.append(lockButton, zoomIn, zoomOut, createZoomButton("reset", "適合文章寬度", "適合寬度"), status);
+		element.append(controls, viewport);
+		let scale = 1;
+		let locked = true;
+		let tx = 0, ty = 0;
+		function pan(x, y) {
+			const marginX = viewport.clientWidth * 0.75;
+			const marginY = viewport.clientHeight * 0.75;
+			tx = Math.max(-wrapper.offsetWidth + viewport.clientWidth - marginX, Math.min(marginX, x));
+			ty = Math.max(-wrapper.offsetHeight + viewport.clientHeight - marginY, Math.min(marginY, y));
+			wrapper.style.transform = `translate(${tx}px, ${ty}px)`;
+		}
+		let drag = null;
+		function setLocked(value) {
+			locked = value;
+			if (drag && viewport.hasPointerCapture(drag.id)) viewport.releasePointerCapture(drag.id);
+			drag = null;
+			viewport.classList.toggle("is-locked", locked);
+			viewport.style.overflow = "hidden";
+			viewport.style.touchAction = locked ? "pan-y pinch-zoom" : "none";
+			lockButton.textContent = locked ? "解除鎖定" : "鎖定位置";
+			lockButton.title = locked ? "解除鎖定圖表" : "鎖定圖表位置";
+			lockButton.setAttribute("aria-label", lockButton.title);
+			lockButton.setAttribute("aria-pressed", String(!locked));
+		}
+		function setScale(next) {
+			scale = Math.max(1, Math.min(4, next));
+			wrapper.style.width = `${scale * 100}%`;
+			viewport.classList.toggle("is-zoomed", scale > 1);
+			viewport.style.maxHeight = scale > 1 ? "70dvh" : "none";
+			pan(0, 0);
+			status.textContent = `${Math.round(scale * 100)}%`;
+			zoomOut.disabled = scale === 1;
+			zoomIn.disabled = scale === 4;
+		}
+		controls.addEventListener("click", (event) => {
+			const action = event.target.closest("button")?.dataset.action;
+			if (action === "zoom-in") setScale(scale * 1.25);
+			if (action === "zoom-out") setScale(scale / 1.25);
+			if (action === "reset") { setScale(1); setLocked(true); }
+			if (action === "lock") setLocked(!locked);
 		});
-
-		let isPanning = false;
-		let startX = 0;
-		let startY = 0;
-		let startTx = 0;
-		let startTy = 0;
-
-		wrapper.style.touchAction = "none";
-
-		wrapper.addEventListener("pointerdown", (ev) => {
-			if (ev.button !== 0) return; // 仅左键
-			isPanning = true;
-			wrapper.setPointerCapture(ev.pointerId);
-			startX = ev.clientX;
-			startY = ev.clientY;
-			startTx = tx;
-			startTy = ty;
+		viewport.addEventListener("keydown", (event) => {
+			if (event.key === "Escape") { event.preventDefault(); setScale(1); setLocked(true); }
+			const delta = { ArrowLeft: [24, 0], ArrowRight: [-24, 0], ArrowUp: [0, 24], ArrowDown: [0, -24] };
+			if (!locked && delta[event.key]) { event.preventDefault(); pan(tx + delta[event.key][0], ty + delta[event.key][1]); }
+			if (locked && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown", " "].includes(event.key)) event.preventDefault();
 		});
-
-		wrapper.addEventListener("pointermove", (ev) => {
-			if (!isPanning) return;
-			const dx = ev.clientX - startX;
-			const dy = ev.clientY - startY;
-			tx = startTx + dx / scale; // 根据当前缩放调整灵敏度
-			ty = startTy + dy / scale;
-			applyTransform();
+		viewport.addEventListener("pointerdown", (event) => {
+			// 解鎖後滑鼠、觸控與觸控筆都可在 100% 直接拖曳。
+			if (locked || event.button !== 0 || drag) return;
+			event.preventDefault();
+			viewport.focus({ preventScroll: true });
+			drag = { id: event.pointerId, x: event.clientX, y: event.clientY, left: tx, top: ty };
+			viewport.setPointerCapture(event.pointerId);
 		});
-
-		wrapper.addEventListener("pointerup", (ev) => {
-			isPanning = false;
-			try {
-				wrapper.releasePointerCapture(ev.pointerId);
-			} catch (e) {}
+		viewport.addEventListener("pointermove", (event) => {
+			if (drag?.id !== event.pointerId) return;
+			pan(drag.left + event.clientX - drag.x, drag.top + event.clientY - drag.y);
 		});
-
-		wrapper.addEventListener("pointercancel", () => {
-			isPanning = false;
-		});
-
-		// 鼠标滚轮缩放
-		element.addEventListener(
-			"wheel",
-			(ev) => {
-				ev.preventDefault();
-				const delta = -ev.deltaY;
-				const zoomFactor = delta > 0 ? 1.12 : 1 / 1.12;
-				const prevScale = scale;
-				scale = Math.min(
-					MAX_SCALE,
-					Math.max(MIN_SCALE, +(scale * zoomFactor).toFixed(3)),
-				);
-
-				const rect = wrapper.getBoundingClientRect();
-				const cx = ev.clientX - rect.left;
-				const cy = ev.clientY - rect.top;
-
-				const worldX = cx / prevScale - tx;
-				const worldY = cy / prevScale - ty;
-
-				tx = cx / scale - worldX;
-				ty = cy / scale - worldY;
-
-				applyTransform();
-			},
-			{ passive: false },
-		);
-
-		// 双击重置
-		wrapper.addEventListener("dblclick", () => {
-			scale = 1;
-			tx = 0;
-			ty = 0;
-			applyTransform();
-		});
-		applyTransform();
-		let resizeTimer = null;
-		window.addEventListener("resize", () => {
-			clearTimeout(resizeTimer);
-			resizeTimer = setTimeout(() => {
-				applyTransform();
-			}, 200);
-		});
+		function finish(event) {
+			if (drag?.id !== event.pointerId) return;
+			drag = null;
+			if (viewport.hasPointerCapture(event.pointerId)) viewport.releasePointerCapture(event.pointerId);
+		}
+		viewport.addEventListener("pointerup", finish);
+		viewport.addEventListener("pointercancel", finish);
+		viewport.addEventListener("lostpointercapture", finish);
+		setScale(1);
+		setLocked(true);
 	}
 
 	function createZoomButton(action, title, label) {
 		const button = document.createElement("button");
-		button.className = "btn-regular rounded-lg h-10 w-10 active:scale-90";
+		button.className = "btn-regular rounded-lg";
+		button.type = "button";
+		button.setAttribute("aria-label", title);
 		button.dataset.action = action;
 		button.title = title;
 		button.textContent = label;
@@ -234,7 +191,18 @@
 	}
 
 	function createMermaidImage(svg) {
-		const blob = new Blob([svg], { type: "image/svg+xml" });
+		// Mermaid 的百分比尺寸放進 img 時可能退回 300×150，先依 viewBox 補齊固有比例。
+		const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
+		const root = doc.documentElement;
+		const box = root.getAttribute("viewBox")?.trim().split(/[\s,]+/).map(Number);
+		if (box?.length === 4 && box.every(Number.isFinite) && box[2] > 0 && box[3] > 0) {
+			root.setAttribute("width", String(box[2]));
+			root.setAttribute("height", String(box[3]));
+			root.style.removeProperty("max-width");
+			root.style.removeProperty("width");
+			root.style.removeProperty("height");
+		}
+		const blob = new Blob([new XMLSerializer().serializeToString(root)], { type: "image/svg+xml" });
 		const objectUrl = URL.createObjectURL(blob);
 		const image = document.createElement("img");
 
@@ -244,7 +212,7 @@
 		image.style.width = "100%";
 		image.style.maxWidth = "100%";
 		image.style.height = "auto";
-		image.style.minHeight = "300px";
+		image.draggable = false;
 
 		image.addEventListener(
 			"load",
