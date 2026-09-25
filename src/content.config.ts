@@ -3,7 +3,8 @@ import { glob } from "astro/loaders";
 import { z } from "astro/zod";
 
 const postsCollection = defineCollection({
-	loader: glob({ pattern: "**/*.md", base: "./src/content/posts" }),
+	// 將 Markdown 渲染交給 Vite 模組更新，避免開發時沿用舊的預渲染內容。
+	loader: glob({ pattern: "**/*.md", base: "./src/content/posts", deferRender: true }),
 	schema: z.object({
 		title: z.string(),
 		published: z.date(),
@@ -21,6 +22,11 @@ const postsCollection = defineCollection({
 		sourceLink: z.string().optional().default(""),
 		licenseName: z.string().optional().default(""),
 		licenseUrl: z.string().optional().default(""),
+
+        /* 系列：0 為導讀，其餘依數字排序。 */
+        series: z.string().min(1).optional(),
+        seriesOrder: z.number().int().nonnegative().optional(),
+        seriesTitle: z.string().optional(),
 
 		/* Page encryption fields */
 		encrypted: z.boolean().optional().default(false),

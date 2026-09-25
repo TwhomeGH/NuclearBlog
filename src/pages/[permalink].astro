@@ -10,6 +10,7 @@ import type { CollectionEntry } from "astro:content";
 import { render } from "astro:content";
 import Comment from "@components/comment/index.astro";
 import License from "@components/misc/License.astro";
+import SeriesNavigation from "@components/misc/SeriesNavigation.astro";
 import Markdown from "@components/misc/Markdown.astro";
 import PasswordProtection from "@components/PasswordProtection.astro";
 import I18nKey from "@i18n/i18nKey";
@@ -213,6 +214,8 @@ const jsonLd = {
                 )
             }
 
+            <SeriesNavigation entry={entry} />
+
             {
                 isEncrypted ? (
                     <PasswordProtection
@@ -223,6 +226,7 @@ const jsonLd = {
                         <Markdown class="mb-6 markdown-content onload-animation">
                             <Content />
                         </Markdown>
+                        <SeriesNavigation entry={entry} position="bottom" />
                         {licenseConfig.enable && (
                             <License
                                 title={entry.data.title}
@@ -333,6 +337,7 @@ const jsonLd = {
         </>
     )}
 
+    {!entry.data.series && (
     <div
         class="flex flex-col md:flex-row justify-between mb-4 gap-4 overflow-hidden w-full"
     >
@@ -384,4 +389,5 @@ const jsonLd = {
             }
         </a>
     </div>
+    )}
 </MainGridLayout>

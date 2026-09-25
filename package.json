@@ -8,6 +8,7 @@
 		"predev": "node scripts/sync-content.js || true",
 		"prebuild": "node scripts/sync-content.js || true",
 		"dev": "astro dev --host 0.0.0.0",
+		"dev:refresh": "astro dev --force --host 0.0.0.0",
 		"start": "astro dev --host 0.0.0.0",
 		"check": "astro check",
 		"update-anime": "node scripts/update-anime.mjs",

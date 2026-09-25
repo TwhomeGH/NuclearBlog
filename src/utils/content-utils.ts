@@ -2,6 +2,7 @@ import { type CollectionEntry, getCollection } from "astro:content";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import { getCategoryUrl, getPostUrl } from "@utils/url-utils";
+import { groupSeries, isSeriesChapter } from "./series-utils";
 import { initPostIdMap } from "@utils/permalink-utils";
 
 // // Retrieve posts and sort them by publication date
@@ -10,6 +11,7 @@ async function getRawSortedPosts() {
 		return import.meta.env.PROD ? data.draft !== true : true;
 	});
 
+	groupSeries(allBlogPosts);
 	const sorted = allBlogPosts.sort((a, b) => {
 		// 首先按置顶状态排序，置顶文章在前
 		if (a.data.pinned && !b.data.pinned) return -1;
@@ -37,7 +39,8 @@ async function getRawSortedPosts() {
 }
 
 export async function getSortedPosts() {
-	const sorted = await getRawSortedPosts();
+	const all = await getRawSortedPosts();
+	const sorted = all.filter(post => !isSeriesChapter(post));
 
 	for (let i = 1; i < sorted.length; i++) {
 		sorted[i].data.nextSlug = sorted[i - 1].id;
@@ -48,7 +51,7 @@ export async function getSortedPosts() {
 		sorted[i].data.prevTitle = sorted[i + 1].data.title;
 	}
 
-	return sorted;
+	return all;
 }
 export type PostForList = {
 	id: string;

@@ -1,0 +1,66 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { getCollection } from "astro:content";
+import { groupSeries } from "../../utils/series-utils";
+import { getPostUrl } from "../../utils/url-utils";
+interface Props { entry: CollectionEntry<"posts">; position?: "top" | "bottom" }
+const { entry, position = "top" } = Astro.props;
+const posts = entry.data.series ? await getCollection("posts", ({ data }) => import.meta.env.PROD ? !data.draft : true) : [];
+const group = entry.data.series ? groupSeries(posts).get(entry.data.series) ?? [] : [];
+const root = group[0];
+const chapters = group.slice(1);
+const index = group.findIndex(p => p.id === entry.id);
+const previous = index > 1 ? group[index - 1] : undefined;
+const next = group[index + 1];
+const title = root?.data.seriesTitle || root?.data.title;
+---
+{root && <nav class="series-navigation" data-series={entry.data.series} data-position={position} aria-label={position === "top" ? "系列章節目錄" : "系列閱讀導覽"} data-pagefind-ignore>
+  {position === "top" ? <>
+    <header class="series-header">
+      <div><span class="series-eyebrow">系列閱讀</span><p class="series-caption">{title}</p></div>
+      <span class="series-count">{index === 0 ? `共 ${chapters.length} 章` : `第 ${index}／${chapters.length} 篇`}</span>
+    </header>
+    <details open={index === 0}>
+      <summary><span>瀏覽章節目錄</span><span class="series-chevron" aria-hidden="true">⌄</span></summary>
+      <ol>
+        {group.map(post => <li><a href={getPostUrl(post)} aria-current={post.id === entry.id ? "page" : undefined}><span class="series-number" aria-hidden="true">{post.data.seriesOrder === 0 ? "序" : String(post.data.seriesOrder).padStart(2, "0")}</span><span class="series-label">{post.data.seriesOrder === 0 ? "系列導讀" : post.data.title}</span>{post.id === entry.id && <span class="series-current">目前</span>}</a></li>)}
+      </ol>
+    </details>
+  </> : <>
+    <a class="series-home" href={getPostUrl(root)}>返回「{title}」總目錄</a>
+    <div class="series-pager">
+      {previous && <a rel="prev" href={getPostUrl(previous)}><small>← 上一章</small><span>{previous.data.title}</span></a>}
+      {next ? <a rel="next" href={getPostUrl(next)}><small>{index === 0 ? "開始閱讀 →" : "下一章 →"}</small><span>{next.data.title}</span></a> : <p>已到本系列最後一章</p>}
+    </div>
+  </>}
+</nav>}
+<style>
+.series-navigation { --series-text: #283342; color: var(--series-text); margin: 1rem 0 1.5rem; padding: 20px; border: 1px solid var(--line-divider); border-top: 3px solid var(--primary); border-radius: 16px; background: var(--card-bg); box-shadow: 0 4px 16px #00000006; }
+:global(.dark) .series-navigation { --series-text: #e5eaf1; }
+.series-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.series-eyebrow { color: var(--primary); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; }
+.series-caption { font-size: 19px; line-height: 1.5; font-weight: 700; margin: 4px 0 0; }
+.series-count { flex-shrink: 0; color: var(--primary); background: var(--btn-regular-bg); font-size: 12px; font-weight: 700; border-radius: 999px; padding: 6px 10px; }
+summary { list-style: none; display: flex; align-items: center; justify-content: space-between; cursor: pointer; min-height: 44px; padding: 10px 12px; border-radius: 8px; background: var(--btn-regular-bg); color: var(--primary); font-size: 14px; font-weight: 600; }
+summary::-webkit-details-marker { display: none; }
+.series-chevron { font-size: 20px; line-height: 1; transition: transform .15s; }
+details[open] .series-chevron { transform: rotate(180deg); }
+ol { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 6px; }
+a { color: inherit; text-decoration: none; border-radius: 10px; overflow-wrap: anywhere; transition: background .15s, color .15s; }
+li a { display: flex; align-items: center; gap: 10px; padding: 10px; min-height: 48px; border: 1px solid transparent; }
+a:hover { background: var(--btn-regular-bg); color: var(--primary); }
+a[aria-current="page"] { background: var(--btn-regular-bg); border-color: var(--primary); color: var(--primary); font-weight: 700; }
+.series-number { flex: 0 0 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: var(--btn-regular-bg); color: var(--primary); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+a[aria-current="page"] .series-number { background: var(--primary); color: var(--card-bg); }
+.series-label { flex: 1; min-width: 0; font-size: 14px; line-height: 1.6; }
+.series-current { flex-shrink: 0; font-size: 11px; font-weight: 600; }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.series-home { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 10px; margin-bottom: 8px; color: var(--primary); font-size: 14px; font-weight: 600; }
+.series-pager { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px; }
+.series-pager a { display: block; padding: 16px; border: 1px solid var(--line-divider); background: var(--btn-regular-bg); }
+.series-pager small { display: block; color: var(--primary); font-size: 12px; margin-bottom: 8px; }
+.series-pager span { display: block; font-size: 15px; line-height: 1.6; font-weight: 600; }
+.series-pager p { color: var(--content-meta); padding: 16px; font-size: 14px; }
+@media (max-width: 480px) { .series-navigation { padding: 14px; } .series-caption { font-size: 17px; } li a { padding: 8px; gap: 8px; } }
+@media (prefers-reduced-motion: reduce) { a, .series-chevron { transition: none; } }
+</style>
