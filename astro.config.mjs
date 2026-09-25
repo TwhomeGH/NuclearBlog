@@ -28,6 +28,7 @@ import { VideoComponent } from "./src/plugins/rehype-video-component.mjs";
 import { rehypeMermaid } from "./src/plugins/rehype-mermaid.mjs";
 import { rehypeWrapTable } from "./src/plugins/rehype-wrap-table.mjs";
 import { parseDirectiveNode } from "./src/plugins/remark-directive-rehype.js";
+import { remarkEcharts } from "./src/plugins/remark-echarts.mjs";
 import { remarkMermaid } from "./src/plugins/remark-mermaid.js";
 import { remarkContent } from "./src/plugins/remark-content.mjs";
 import { rehypeImageWidth } from "./src/plugins/rehype-image-width.mjs";
@@ -135,6 +136,7 @@ export default defineConfig({
 				remarkSectionize,
 				parseDirectiveNode,
 				remarkMermaid,
+				remarkEcharts,
 			],
 			rehypePlugins: [
 				rehypeKatex,

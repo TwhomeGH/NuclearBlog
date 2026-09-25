@@ -53,6 +53,7 @@
 		"cookie": "^2.0.1",
 		"crypto-js": "^4.2.0",
 		"dayjs": "^1.11.19",
+		"echarts": "^6.1.0",
 		"hastscript": "^9.0.1",
 		"katex": "^0.16.28",
 		"markdown-it": "^14.1.0",

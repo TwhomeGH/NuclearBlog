@@ -1,0 +1,6 @@
+interactive-chart { display: block; width: 100%; min-width: 0; margin: 1.5rem 0; padding: 12px; border: 1px solid var(--line-divider); border-radius: 12px; background: var(--card-bg); }
+.echarts-stage { width: 100%; height: clamp(320px, 50vw, 440px); min-width: 0; touch-action: pan-y; }
+.echarts-stage:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+interactive-chart .echarts-hint, interactive-chart .echarts-selection { margin: 8px 0; font-size: 0.875rem; line-height: 1.6; overflow-wrap: anywhere; }
+interactive-chart .echarts-selection { min-height: 1.6em; }
+interactive-chart button { min-height: 44px; padding: 0 12px; }
