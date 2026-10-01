@@ -43,3 +43,9 @@ corepack pnpm exec astro build
 ## 升級維護重點
 
 Markdown 插件集中在 [astro.config.mjs](../astro.config.mjs) 的 `markdown.processor: unified(...)`。Tailwind 3 由 [PostCSS 設定](../postcss.config.mjs) 與 [全域入口](../src/styles/tailwind.css) 載入，不再使用舊 Astro Tailwind integration。CI 的 Node 版本與套件升級需要一起檢查。
+
+## 本機字型預覽
+
+`LocalFonts.astro` 依 `src/config.ts` 的字型設定產生宣告。`pnpm dev` 直接載入 `public/assets/font/` 的原始 TTF，不必先壓縮；ASCII 字型限制在 `U+0000-007F`，中文由 CJK 字型處理。原始字型較大，首次載入時會先顯示替代字型，再切換至自訂字型。
+
+正式環境中啟用 `enableCompress` 的 TTF 改用 WOFF2 子集。請使用完整 `pnpm build` 產生壓縮檔，再執行 `pnpm preview`；單獨 `astro build` 不包含字型壓縮步驟。更換字型時更新 `fontFamily`、`fontWeight` 與 `localFonts`，不用另改 main.css。

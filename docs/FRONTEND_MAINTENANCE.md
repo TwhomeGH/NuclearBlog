@@ -35,3 +35,7 @@ Markdown 不會因為建立了一個 `.astro` 或 `.svelte` 檔案，就自動�
 提交時按功能分組，程式與對應相依套件一起提交；文件可獨立提交。文章草稿及正式文章另行審閱，使用明確路徑暫存，避免 `git add .` 把未完成內容一起納入。即使文章標記 `draft`，也仍需決定是否適合進版本紀錄。
 
 延伸閱讀：[開發環境](DEVELOPMENT.md)、[浮動閱讀工具](READING_TOOLS.md)、[Markdown 圖表](MARKDOWN_CHARTS.md)、[系列文章](ARTICLE_SERIES.md)。
+
+### 深色文章文字
+
+Markdown 的深色正文與粗體色彩集中於 `markdown-extend.styl` 的 `.dark .custom-md.prose`：正文 `#e2e5e9`、粗體 `#eceef1`。粗體主要以字重區分，避免一般文字偏灰、粗體純白的明顯落差；淺色模式沿用原有 Typography 配色。

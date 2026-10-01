@@ -1,0 +1,25 @@
+---
+import { siteConfig } from "../config";
+import { url } from "../utils/url-utils";
+
+// 開發直接載入原稿；完整建置最後由 compress-fonts.js 產生子集。
+const rules = Object.entries(siteConfig.font ?? {}).flatMap(([kind, font]) => {
+  if (!font?.fontFamily || !font.localFonts?.length) return [];
+  const sources = font.localFonts.map((file) => {
+    const useSubset = import.meta.env.PROD && font.enableCompress && /\.ttf$/i.test(file);
+    const filename = useSubset ? file.replace(/\.ttf$/i, ".woff2") : file;
+    const extension = filename.split(".").pop()?.toLowerCase();
+    const format = { ttf: "truetype", otf: "opentype", woff: "woff", woff2: "woff2" }[extension ?? ""];
+    return `url(${JSON.stringify(url(`/assets/font/${encodeURIComponent(filename)}`))})${format ? ` format("${format}")` : ""}`;
+  });
+  return [`@font-face {
+    font-family: ${JSON.stringify(font.fontFamily)};
+    src: ${sources.join(", ")};
+    font-style: normal;
+    font-weight: ${font.fontWeight || "400"};
+    font-display: swap;
+    ${kind === "asciiFont" ? "unicode-range: U+0000-007F;" : ""}
+  }`];
+}).join("\n");
+---
+<style is:inline set:html={rules} />

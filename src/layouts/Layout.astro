@@ -1,4 +1,5 @@
 ---
+import LocalFonts from "@components/LocalFonts.astro";
 import ConfigCarrier from "@components/ConfigCarrier.astro";
 import FloatingTOC from "@components/control/FloatingTOC.astro";
 import MusicPlayer from "@components/widget/MusicPlayer.svelte";
@@ -172,6 +173,7 @@ if (siteConfig.font) {
 	data-overlayscrollbars-initialize
 >
 	<head>
+		<LocalFonts />
 		<!-- 第三方分析脚本 - 延迟加载优化 -->
 		<script is:inline>
 			// 使用 requestIdleCallback 延迟加载第三方脚本

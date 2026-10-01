@@ -1,0 +1,13 @@
+{
+  "version": 1.1,
+  "atDirectives": [
+    {
+      "name": "@tailwind",
+      "description": "Tailwind CSS 3：注入 base、components 或 utilities 樣式，由 PostCSS 的 Tailwind 插件處理。"
+    },
+    {
+      "name": "@apply",
+      "description": "Tailwind CSS 3：在 CSS 規則中套用工具類別，由 PostCSS 的 Tailwind 插件處理。"
+    }
+  ]
+}
