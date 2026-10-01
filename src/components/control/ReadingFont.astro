@@ -1,0 +1,102 @@
+---
+import { siteConfig } from "../../config";
+const customName = siteConfig.font?.cjkFont?.fontFamily || "本站預設";
+---
+<reading-font hidden>
+  <div class="font-toolbar">
+    <button type="button" data-toggle aria-expanded="false" aria-controls="reading-font-options">Aa 字型</button>
+    <button type="button" data-floating-drag aria-label="移動字型面板；方向鍵移動，Home 重設" title="拖曳移動">⠿</button>
+  </div>
+  <section id="reading-font-options" hidden aria-label="文章字型設定">
+    <fieldset>
+      <legend>閱讀字型</legend>
+      <label><input type="radio" name="reading-font" value="site" checked /> 本站字型 <small>{customName}</small></label>
+      <label><input type="radio" name="reading-font" value="system" /> 系統字型 <small>使用裝置的預設無襯線字型</small></label>
+    </fieldset>
+    <p>只調整文章正文，選擇會自動保存。</p>
+    <div class="font-actions"><button type="button" data-floating-reset>重設位置</button><button type="button" data-close>收合</button></div>
+  </section>
+</reading-font>
+<style>
+reading-font { position: fixed; right: 16px; top: 55%; z-index: 70; display: block; width: 144px; max-width: calc(100vw - 32px); background: var(--card-bg); color: var(--primary); border: 1px solid var(--line-divider); border-radius: 16px; box-shadow: 0 6px 24px #0002; font-family: system-ui, sans-serif; }
+[hidden] { display: none !important; }
+reading-font[data-open="true"] { width: 300px; }
+.font-toolbar { display: flex; padding: 4px; }
+button { min-height: 44px; padding: 0 12px; border-radius: 10px; }
+button:hover { background: var(--btn-regular-bg); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+[data-toggle] { flex: 1; text-align: left; font-weight: 600; }
+[data-floating-drag] { width: 44px; padding: 0; font-size: 24px; cursor: grab; touch-action: none; user-select: none; }
+section { border-top: 1px solid var(--line-divider); padding: 12px; max-height: calc(100dvh - 100px); overflow-y: auto; }
+fieldset { min-width: 0; }
+legend { font-weight: 600; margin-bottom: 8px; }
+label { display: block; padding: 10px; border-radius: 10px; cursor: pointer; color: var(--content-meta); }
+label:has(input:checked) { background: var(--btn-regular-bg); color: var(--primary); }
+input { accent-color: var(--primary); margin-right: 6px; }
+small { display: block; padding-left: 24px; font-size: 12px; overflow-wrap: anywhere; }
+p { font-size: 12px; margin: 12px 0 4px; color: var(--content-meta); }
+.font-actions { display: flex; justify-content: space-between; font-size: 13px; }
+</style>
+<style is:global>
+html[data-reading-font="system"] #post-container .custom-md {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", "PingFang TC", sans-serif;
+}
+</style>
+<script>
+import { floatingPanel } from "../../utils/floating-panel";
+class ReadingFont extends HTMLElement {
+  private events?: AbortController;
+  private observer?: MutationObserver;
+  private dock?: ReturnType<typeof floatingPanel>;
+  private frame = 0;
+  private article: Element | null = null;
+  private open = false;
+  private setOpen(open: boolean) {
+    this.open = open;
+    this.dataset.open = String(open);
+    this.querySelector<HTMLElement>("section")!.hidden = !open;
+    this.querySelector("[data-toggle]")!.setAttribute("aria-expanded", String(open));
+    if (open) document.dispatchEvent(new CustomEvent("reading-tool:open", { detail: "font" }));
+  }
+  private refresh = () => {
+    const article = document.querySelector("#post-container .custom-md");
+    if (article !== this.article) { this.article = article; this.setOpen(false); }
+    this.hidden = !article;
+  };
+  connectedCallback() {
+    this.events = new AbortController();
+    const options = { signal: this.events.signal };
+    let choice = document.documentElement.dataset.readingFont || "site";
+    try { choice = localStorage.getItem("reading-font-v1") || "site"; } catch { /* 使用預設字型 */ }
+    const apply = (value: string) => {
+      const selected = value === "system" ? "system" : "site";
+      document.documentElement.dataset.readingFont = selected;
+      this.querySelectorAll<HTMLInputElement>("input").forEach(input => input.checked = input.value === selected);
+    };
+    apply(choice);
+    this.refresh();
+    this.dock = floatingPanel(this, { key: "reading-font-position-v1", side: "right", defaultY: 0.55 });
+    this.querySelector("[data-toggle]")!.addEventListener("click", () => this.setOpen(!this.open), options);
+    this.querySelector("[data-close]")!.addEventListener("click", () => { this.setOpen(false); this.querySelector<HTMLButtonElement>("[data-toggle]")!.focus(); }, options);
+    this.addEventListener("change", event => {
+      const input = event.target;
+      if (!(input instanceof HTMLInputElement)) return;
+      apply(input.value);
+      try { localStorage.setItem("reading-font-v1", input.value); } catch { /* 保留本頁選擇 */ }
+    }, options);
+    this.addEventListener("keydown", event => {
+      if (event.key === "Escape" && this.open) { this.setOpen(false); this.querySelector<HTMLButtonElement>("[data-toggle]")!.focus(); }
+    }, options);
+    document.addEventListener("pointerdown", event => { if (this.open && !this.contains(event.target as Node)) this.setOpen(false); }, options);
+    document.addEventListener("reading-tool:open", event => { if ((event as CustomEvent).detail !== "font") this.setOpen(false); }, options);
+    this.observer = new MutationObserver(records => {
+      if (!records.some(r => r.target instanceof Element && r.target.closest("main") || [...r.addedNodes, ...r.removedNodes].some(n => n instanceof Element && (n.matches("main") || n.querySelector("main"))))) return;
+      cancelAnimationFrame(this.frame); this.frame = requestAnimationFrame(this.refresh);
+    });
+    this.observer.observe(document.body, { childList: true, subtree: true });
+    document.addEventListener("DOMContentLoaded", this.refresh, options);
+  }
+  disconnectedCallback() { this.events?.abort(); this.observer?.disconnect(); this.dock?.destroy(); cancelAnimationFrame(this.frame); }
+}
+if (!customElements.get("reading-font")) customElements.define("reading-font", ReadingFont);
+</script>

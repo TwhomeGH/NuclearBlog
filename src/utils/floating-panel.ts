@@ -1,5 +1,5 @@
 export type FloatingPosition = { x: number; y: number };
-export type FloatingPanelOptions = { key: string; side: "left" | "right" };
+export type FloatingPanelOptions = { key: string; side: "left" | "right"; defaultY?: number };
 const clamp = (value: number, max = 1) => Math.max(0, Math.min(max, value));
 
 export function readFloatingPosition(value: string | null, fallback: FloatingPosition): FloatingPosition {
@@ -12,7 +12,7 @@ export function readFloatingPosition(value: string | null, fallback: FloatingPos
 
 /** Astro 與 Svelte 共用：只從專用把手拖曳，避免攔截播放及文章捲動。 */
 export function floatingPanel(node: HTMLElement, options: FloatingPanelOptions) {
-	const defaults = { x: options.side === "left" ? 0 : 1, y: 1 };
+	const defaults = { x: options.side === "left" ? 0 : 1, y: clamp(options.defaultY ?? 1) };
 	let position = { ...defaults };
 	try { position = readFloatingPosition(localStorage.getItem(options.key), defaults); } catch { /* noop */ }
 	const events = new AbortController();

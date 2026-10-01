@@ -1,4 +1,5 @@
 ---
+import ReadingFont from "@components/control/ReadingFont.astro";
 import LocalFonts from "@components/LocalFonts.astro";
 import ConfigCarrier from "@components/ConfigCarrier.astro";
 import FloatingTOC from "@components/control/FloatingTOC.astro";
@@ -174,6 +175,11 @@ if (siteConfig.font) {
 >
 	<head>
 		<LocalFonts />
+        <script is:inline>
+          try {
+            document.documentElement.dataset.readingFont = localStorage.getItem("reading-font-v1") === "system" ? "system" : "site";
+          } catch { /* 儲存不可用時沿用本站字型 */ }
+        </script>
 		<!-- 第三方分析脚本 - 延迟加载优化 -->
 		<script is:inline>
 			// 使用 requestIdleCallback 延迟加载第三方脚本
@@ -402,6 +408,7 @@ if (siteConfig.font) {
 		<slot />
 
 		{siteConfig.toc.enable && <FloatingTOC />}
+        <ReadingFont />
 
 		<!-- Music Player - 仅在启用时加载 -->
 		{musicPlayerConfig.enable && <MusicPlayer client:idle />}
