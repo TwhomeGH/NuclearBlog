@@ -49,10 +49,10 @@ const iconSrc = rawIcon.match(/^(http|https|\/\/)/) ? rawIcon : url(rawIcon);
 				{/* 使用navbarTitle配置或默认配置 */}
                 {siteConfig.navbarTitle ? (
                     siteConfig.navbarTitle.mode === "logo" ? (
-                        <img src={logoSrc} alt={siteConfig.navbarTitle.text} width="772" height="254" class="w-auto h-[2.5rem] md:h-[3.25rem] md:[.enable-banner_&]:h-[2.5rem] md:[.enable-banner_&]:group-[.scrolled]:h-[3.25rem] max-w-full object-contain transition-all duration-300" loading="lazy" />
+                        <img src={logoSrc} alt={siteConfig.navbarTitle.text} width="772" height="254" class="w-auto h-[2.5rem] md:h-[3.25rem] md:[.enable-banner_&]:h-[2.5rem] md:[.enable-banner_&]:group-[.scrolled]:h-[3.25rem] max-w-full object-contain transition-all duration-300" loading="eager" />
                     ) : (
                         <>
-                            <img src={iconSrc} alt={siteConfig.navbarTitle.text} width="28" height="28" class="h-[1.75rem] w-[1.75rem] mr-2 object-contain" loading="lazy" />
+                            <img src={iconSrc} alt={siteConfig.navbarTitle.text} width="28" height="28" class="h-[1.75rem] w-[1.75rem] mr-2 object-contain" loading="eager" />
                             <span class="dark:text-white text-black">{siteConfig.navbarTitle.text}</span>
                         </>
                     )

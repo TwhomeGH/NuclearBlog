@@ -79,7 +79,7 @@ let currentSong = {
 };
 
 type Song = {
-	id: number;
+	id: string | number;
 	title: string;
 	artist: string;
 	cover: string;
@@ -192,14 +192,15 @@ async function fetchMetingPlaylist() {
 			}
 		}
 
-		playlist = list.map((song: MetingSong) => {
-			let title = song.name ?? song.title ?? i18n(Key.unknownSong);
-		let artist = song.artist ?? song.author ?? i18n(Key.unknownArtist);
+		const songs: MetingSong[] = list ?? [];
+		playlist = songs.map((song: MetingSong) => {
+			const title = song.name ?? song.title ?? i18n(Key.unknownSong);
+			const artist = song.artist ?? song.author ?? i18n(Key.unknownArtist);
 			let dur = song.duration ?? 0;
 			if (dur > 10000) dur = Math.floor(dur / 1000);
 			if (!Number.isFinite(dur) || dur <= 0) dur = 0;
 			return {
-				id: song.id,
+				id: song.id ?? 0,
 				title,
 				artist,
 				cover: song.pic ?? "",
@@ -211,7 +212,8 @@ async function fetchMetingPlaylist() {
 			loadSong(playlist[0]);
 		}
 		isLoading = false;
-	} catch (e) {
+	} catch (error) {
+		console.error("[MusicPlayer] 取得播放清單失敗：", error);
 		showErrorMessage(i18n(Key.musicPlayerErrorPlaylist));
 		isLoading = false;
 	}
@@ -371,12 +373,36 @@ function handleUserInteraction() {
     }
 }
 
+// 把 <audio> 的 media error 轉成可讀訊息，方便判斷是網路、版權還是格式問題。
+function describeMediaError(audioEl: HTMLAudioElement | undefined): string {
+	const err = audioEl?.error;
+	if (!err) return "未知錯誤";
+	switch (err.code) {
+		case 1: // MEDIA_ERR_ABORTED
+			return "播放已中止";
+		case 2: // MEDIA_ERR_NETWORK
+			return "網路錯誤（音源無法下載）";
+		case 3: // MEDIA_ERR_DECODE
+			return "解碼錯誤（檔案損毀）";
+		case 4: // MEDIA_ERR_SRC_NOT_SUPPORTED
+			return "音源不可用（可能被封鎖、跨域或版權限制）";
+		default:
+			return `錯誤代碼 ${err.code}`;
+	}
+}
+
 function handleLoadError(_event: Event) {
 	if (!currentSong.url) return;
 	isLoading = false;
-	showErrorMessage(i18n(Key.musicPlayerErrorSong));
-	
-    const shouldContinue = isPlaying || willAutoPlay;
+	const detail = describeMediaError(audio);
+	console.error("[MusicPlayer] 載入失敗：", detail, {
+		url: currentSong.url,
+		code: audio?.error?.code,
+		message: audio?.error?.message,
+	});
+	showErrorMessage(`${i18n(Key.musicPlayerErrorSong)}（${detail}）`);
+
+	const shouldContinue = isPlaying || willAutoPlay;
 	if (playlist.length > 1) {
 		setTimeout(() => nextSong(shouldContinue), 1000);
 	} else {

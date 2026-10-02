@@ -16,6 +16,7 @@
 		"dev:panel": "node scripts/dev-panel.mjs",
 		"start": "astro dev stop && astro dev --host 0.0.0.0",
 		"check": "astro check",
+		"check:svelte": "svelte-check --tsconfig ./tsconfig.json",
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"update-anime": "node scripts/update-anime.mjs",
@@ -112,6 +113,7 @@
 		"postcss-import": "^16.1.1",
 		"postcss-nesting": "^13.0.2",
 		"prettier": "^3.8.1",
+		"svelte-check": "^4.7.6",
 		"typescript-eslint": "^8.71.0",
 		"vitest": "^5.0.3"
 	},
