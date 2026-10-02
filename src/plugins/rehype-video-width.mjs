@@ -1,4 +1,5 @@
 import { visit } from "unist-util-visit";
+import { VideoComponent } from "./rehype-video-component.mjs";
 
 export function rehypeVideoWidth() {
 	const regex = / w-([0-9]+)%/;
@@ -9,7 +10,7 @@ export function rehypeVideoWidth() {
 				const props = node.properties;
 
 				let width = props.width;
-				let height = props.height;
+				const height = props.height;
 
 				// 支援 alt 裡的 w-xx% 語法
 				if (props.alt) {
@@ -35,7 +36,7 @@ export function rehypeVideoWidth() {
 					properties: {
 						style: `width:${width || "100%"}; height:${height || "150px"}; margin:1em auto; position:relative; overflow:hidden;`,
 					},
-					children: [node],
+					children: [VideoComponent(props, node.children)],
 				};
 
 				// 如果有 title → 加 figcaption

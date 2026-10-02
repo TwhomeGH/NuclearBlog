@@ -22,8 +22,7 @@ import { pluginLanguageBadge } from "./src/plugins/expressive-code/language-badg
 import { AdmonitionComponent } from "./src/plugins/rehype-component-admonition.mjs";
 import { GithubCardComponent } from "./src/plugins/rehype-component-github-card.mjs";
 
-// 視頻組件
-import { VideoComponent } from "./src/plugins/rehype-video-component.mjs";
+// 視頻組件（由 rehypeVideoWidth 套用，見 rehype-video-width.mjs）
 
 import { rehypeMermaid } from "./src/plugins/rehype-mermaid.mjs";
 import { rehypeWrapTable } from "./src/plugins/rehype-wrap-table.mjs";
@@ -34,6 +33,7 @@ import { remarkContent } from "./src/plugins/remark-content.mjs";
 import { rehypeImageWidth } from "./src/plugins/rehype-image-width.mjs";
 
 import { rehypeVideoWidth } from "./src/plugins/rehype-video-width.mjs";
+import { remarkVideoAssets, videoAssets } from "./src/plugins/video-assets.mjs";
 
 import rehypeRaw from "rehype-raw";
 
@@ -46,7 +46,17 @@ export default defineConfig({
 	output: "static",
 	compressHTML: true,
 
+	// Markdown 圖片改走內容雜湊的 _astro 快取；layout 讓其產生 srcset，
+	// 避免每次都下載原始畫素尺寸（本主題以 inline style 控制排版，故關閉全域樣式）。
+	image: {
+		layout: "constrained",
+		responsiveStyles: false,
+		// 只產生涵蓋實際欄寬（含 retina 2x）的尺寸，避免每個來源圖散出 7 個變體。
+		breakpoints: [400, 560, 720, 960, 1440],
+	},
+
 	integrations: [
+		videoAssets(),
 		umami({
 			shareUrl: false,
 		}),
@@ -133,6 +143,7 @@ export default defineConfig({
 				remarkContent,
 				remarkGithubAdmonitionsToDirectives,
 				remarkDirective,
+				remarkVideoAssets,
 				remarkSectionize,
 				parseDirectiveNode,
 				remarkMermaid,
@@ -156,8 +167,8 @@ export default defineConfig({
 							important: (x, y) =>
 								AdmonitionComponent(x, y, "important"),
 							caution: (x, y) => AdmonitionComponent(x, y, "caution"),
-							warning: (x, y) => AdmonitionComponent(x, y, "warning"),
-							VideoComponent: VideoComponent,
+							warning: (x, y) =>
+								AdmonitionComponent(x, y, "warning"),
 						},
 					},
 				],

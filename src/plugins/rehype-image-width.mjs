@@ -1,10 +1,17 @@
 import { visit } from "unist-util-visit";
 
+// 文章欄寬實測：寬螢幕最大約 720px，中段約 560px，行動版為單欄 100vw。
+// 注入 sizes 讓瀏覽器依實際顯示寬度挑選 srcset，而非用視窗寬（100vw）超取。
+const SIZES_SINGLE =
+	"(min-width: 1024px) 720px, (min-width: 768px) 560px, 100vw";
+const SIZES_MULTI =
+	"(min-width: 1024px) 360px, (min-width: 768px) 280px, 50vw";
+
 export function rehypeImageWidth() {
 	const regexW = / w-([0-9]+)(%|px)?/;
 	const regexH = / h-([0-9]+)(%|px)?/;
 
-	const processImg = (imgNode) => {
+	const processImg = (imgNode, sizes) => {
 		const alt = imgNode.properties.alt || "";
 		const matchW = alt.match(regexW);
 		const matchH = alt.match(regexH);
@@ -24,6 +31,7 @@ export function rehypeImageWidth() {
 			.replace(regexH, "")
 			.trim();
 
+		imgNode.properties.sizes = sizes;
 		imgNode.properties.style = `display:block; margin:0 auto; width:${width}; height:${height}; object-fit:contain;`;
 
 		return {
@@ -43,7 +51,9 @@ export function rehypeImageWidth() {
 				);
 
 				if (imgChildren.length > 1) {
-					const figures = imgChildren.map(processImg);
+					const figures = imgChildren.map((img) =>
+						processImg(img, SIZES_MULTI),
+					);
 
 					const flexWrapper = {
 						type: "element",
@@ -61,7 +71,10 @@ export function rehypeImageWidth() {
 					node.children[0].tagName === "img"
 				) {
 					// 單張圖片 → figure
-					parent.children[index] = processImg(node.children[0]);
+					parent.children[index] = processImg(
+						node.children[0],
+						SIZES_SINGLE,
+					);
 				}
 			}
 		});

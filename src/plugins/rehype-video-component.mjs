@@ -9,13 +9,21 @@ import { h } from "hastscript";
  * @returns
  */
 
-export function VideoComponent(properties) {
-	return h("video", {
-		src: properties.src,
-		controls: properties.controls !== "false",
-		autoplay: properties.autoplay === "true",
-		loop: properties.loop === "true",
-		muted: properties.muted === "true",
-		poster: properties.poster,
-	});
+export function VideoComponent(properties = {}, children = []) {
+	return h(
+		"video",
+		{
+			src: properties.src,
+			controls: properties.controls !== "false",
+			autoplay: properties.autoplay === "true",
+			loop: properties.loop === "true",
+			muted: properties.muted === "true",
+			playsinline: properties.playsinline !== "false",
+			preload: properties.preload || "metadata",
+			poster: properties.poster,
+			style: properties.style,
+			className: properties.className || properties.class,
+		},
+		children,
+	);
 }

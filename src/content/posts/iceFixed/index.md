@@ -19,7 +19,6 @@ draft: false
 
 沒有你可以選擇先把他吃掉喝掉 清掉後再來考慮清理
 
-
 ## 把冰箱制冷關閉
 
 ![ice0 h-344px](./ice0.jpg)
@@ -34,8 +33,7 @@ draft: false
 
 ::warning[小心刮 別刮壞了]
 
-::video[Demo Clip]{ src="https://coffee3322.ccwu.cc/api/s/xf1q1s/VID_20260505_212018.mp4" controls=true autoplay=false width="100%" height="468px" muted=true}
-
+::video[Demo Clip]{ src="./VID_20260505_212018.mp4" controls=true autoplay=false width="100%" height="468px" muted=true}
 
 ::tip[關於這一點其實 你可以等他融化]
 
@@ -47,7 +45,6 @@ draft: false
 
 ![ice5 h-355px](./ice5.jpg)
 
-
 ## 然後這麼處理他融化後的水呢?
 
 這一點 別像主播笨笨的 比較後面才拿毛巾擦
@@ -56,13 +53,11 @@ draft: false
 
 其餘沒溢出的用塑膠袋接 如圖
 
-
 ## 毛巾/抹布/浴巾
 
 這一點 你要懂得變通
 
 不要笨笨的沒想到 其他也可以用
-
 
 這一點是指 抹布
 
@@ -75,13 +70,13 @@ draft: false
 只要是能吸掉融化的水 以及擦乾就好
 
 ![ice6](./ice6.jpg)
-![ice7](./ice7.jpg) 
+![ice7](./ice7.jpg)
 
 然後就是他後面融化的差不多的後續呢
 
-# 尾聲
+## 尾聲
 
-![ice0F](./ice0.jpg) 
+![ice0F](./ice0.jpg)
 
 把溫度調解 轉回去合適的區間
 
@@ -91,6 +86,4 @@ draft: false
 
 然後放回你要冰的東西或者沒有
 
-![ice8 h-300px](./ice8.jpg) 
-
-
+![ice8 h-300px](./ice8.jpg)
