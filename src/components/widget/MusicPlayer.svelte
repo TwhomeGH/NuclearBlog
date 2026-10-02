@@ -8,6 +8,8 @@ import { musicPlayerConfig } from "../../config";
 // 导入国际化相关的 Key 和 i18n 实例
 import Key from "../../i18n/i18nKey";
 import { i18n } from "../../i18n/translation";
+// build 時預先產生的播放清單與本地封面（見 scripts/update-music.mjs）
+import musicData from "../../data/music-player.json";
 
 // Meting API 回傳的單曲資料（欄位依來源而異，故多為選填）
 interface MetingSong {
@@ -69,15 +71,6 @@ let errorMessage = "";
 // 是否显示错误信息，默认为 false
 let showError = false;
 
-// 当前歌曲信息
-let currentSong = {
-	title: "Sample Song",
-	artist: "Sample Artist",
-	cover: "/favicon/favicon.ico",
-	url: "",
-	duration: 0,
-};
-
 type Song = {
 	id: string | number;
 	title: string;
@@ -87,8 +80,20 @@ type Song = {
 	duration: number;
 };
 
-let playlist: Song[] = [];
+// build 時已備好的歌曲（含本地封面）；若為空，才於互動時向 API 取得。
+const staticSongs: Song[] = Array.isArray(musicData?.songs) ? (musicData.songs as Song[]) : [];
+let playlist: Song[] = staticSongs;
 let currentIndex = 0;
+
+// 当前歌曲信息
+let currentSong: Song = staticSongs[0] ?? {
+	id: 0,
+	title: "Sample Song",
+	artist: "Sample Artist",
+	cover: "/favicon/favicon.ico",
+	url: "",
+	duration: 0,
+};
 let audio: HTMLAudioElement;
 let progressBar: HTMLElement;
 let volumeBar: HTMLElement;
@@ -224,6 +229,8 @@ let playlistLoaded = false;
 function ensurePlaylist(): Promise<void> {
 	if (playlistLoaded) return Promise.resolve();
 	playlistLoaded = true;
+	// build 時已提供歌曲（含本地封面與 url）→ 不需再呼叫 API
+	if (playlist.length > 0) return Promise.resolve();
 	if (mode === "meting") return fetchMetingPlaylist();
 	playlist = [...localPlaylist];
 	if (playlist.length > 0) {

@@ -1,0 +1,14 @@
+{
+	"key": "netease|song|3340113701",
+	"updatedAt": "2026-10-02T16:13:45.105Z",
+	"songs": [
+		{
+			"id": "3340113701",
+			"title": "瞬間、シンフォニー。",
+			"artist": "40mP / かぐや(cv.夏吉ゆうこ) / 超かぐや姫！",
+			"cover": "/music/3340113701.jpg",
+			"duration": 0,
+			"url": "https://met.api.xiaoguan.fit/api?server=netease&type=url&id=3340113701"
+		}
+	]
+}
