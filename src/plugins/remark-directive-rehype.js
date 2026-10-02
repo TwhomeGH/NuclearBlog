@@ -57,8 +57,6 @@ export function parseDirectiveNode() {
 				if (node.label) {
 					data.hChildren = [{ type: "text", value: node.label }];
 				}
-
-				console.log("DirectiveNode:", node);
 			}
 		});
 	};

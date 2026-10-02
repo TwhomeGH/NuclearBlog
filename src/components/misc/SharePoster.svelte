@@ -361,6 +361,16 @@ function closeModal() {
 	showModal = false;
 }
 
+// 點擊背景關閉（僅在點到背景本身時，避免點到內容也關閉）
+function onBackdropClick(event: MouseEvent) {
+	if (event.target === event.currentTarget) closeModal();
+}
+
+// Escape 關閉，讓模態可用鍵盤操作
+function handleKeydown(event: KeyboardEvent) {
+	if (showModal && event.key === "Escape") closeModal();
+}
+
 let copied = false;
 const COPY_FEEDBACK_DURATION = 2000;
 
@@ -408,9 +418,11 @@ function portal(node: HTMLElement) {
   <span>{i18n(I18nKey.shareArticle)}</span>
 </button>
 
+<svelte:window on:keydown={handleKeydown} />
+
 {#if showModal}
-  <div use:portal class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-opacity" on:click={closeModal}>
-    <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto flex flex-col shadow-2xl transform transition-all" on:click|stopPropagation>
+  <div use:portal role="presentation" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-opacity" on:click={onBackdropClick}>
+    <div role="dialog" aria-modal="true" aria-label={i18n(I18nKey.shareArticle)} class="bg-white dark:bg-gray-800 rounded-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto flex flex-col shadow-2xl transform transition-all">
       
       <div class="p-6 flex justify-center bg-gray-50 dark:bg-gray-900 min-h-[200px] items-center">
         {#if posterImage}

@@ -11,8 +11,6 @@ import { h } from "hastscript";
  * @returns {import('mdast').Parent} The created admonition component.
  */
 export function AdmonitionComponent(properties, children, type) {
-	console.log("TipWorking", properties, children, type);
-
 	if (!Array.isArray(children) || children.length === 0)
 		return h(
 			"div",
@@ -21,10 +19,10 @@ export function AdmonitionComponent(properties, children, type) {
 		);
 
 	let label = null;
+	let content = children;
 	if (properties?.["has-directive-label"]) {
-		label = children[0]; // The first child is the label
-		// biome-ignore lint/style/noParameterAssign: <check later>
-		children = children.slice(1);
+		label = content[0]; // The first child is the label
+		content = content.slice(1);
 		label.tagName = "div"; // Change the tag <p> to <div>
 	}
 
@@ -43,7 +41,7 @@ export function AdmonitionComponent(properties, children, type) {
 				},
 				label ? label : type.toUpperCase(),
 			),
-			...children,
+			...content,
 		],
 	);
 }
