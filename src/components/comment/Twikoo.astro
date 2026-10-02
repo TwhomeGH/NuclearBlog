@@ -13,77 +13,101 @@ const config = {
 ---
 
 <div id="tcomment"></div>
-<script is:inline src="/scroll-protection.js"></script>
-<script is:inline src="/assets/js/twikoo.all.min.js"></script>
+
 <script is:inline define:vars={{ config }}>
-  // 获取当前页面路径
-  function getCurrentPath() {
-    const pathname = window.location.pathname;
-    return pathname.endsWith('/') && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
-  }
-  
-  // 动态创建配置对象
-  function createTwikooConfig() {
-    return {
-      ...config,
-      path: getCurrentPath(),
-      el: '#tcomment'
-    };
-  }
-  
-  // 初始化 Twikoo
-  function initTwikoo() {
-    if (typeof twikoo !== 'undefined') {
-      const commentEl = document.getElementById('tcomment');
-      if (commentEl) {
-        commentEl.innerHTML = '';
-        
-        const dynamicConfig = createTwikooConfig();
-        console.log('[Twikoo] 初始化配置:', dynamicConfig);
-        
-        twikoo.init(dynamicConfig).then(() => {
-          console.log('[Twikoo] 初始化完成');
-        }).catch((error) => {
+  (function () {
+    const SCRIPT_URL = '/assets/js/twikoo.all.min.js';
+    let initedFor = null;
+
+    function getCurrentPath() {
+      const pathname = window.location.pathname;
+      return pathname.endsWith('/') && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
+    }
+
+    // Twikoo 的 OwO 表情圖由 JS 產生、沒有尺寸；補上屬性並移除 lazy，
+    // 避免 Chrome 標記「lazy 圖片缺尺寸」及 CLS。
+    function fixOwOImages() {
+      document.querySelectorAll('.OwO-items-image img').forEach(function (img) {
+        if (!img.getAttribute('width')) img.setAttribute('width', '30');
+        if (!img.getAttribute('height')) img.setAttribute('height', '30');
+        if (img.getAttribute('loading') === 'lazy') img.removeAttribute('loading');
+      });
+    }
+
+    function loadTwikooScript(callback) {
+      if (typeof window.twikoo !== 'undefined') { callback(); return; }
+      const existing = document.querySelector('script[data-twikoo-loader]');
+      if (existing) { existing.addEventListener('load', callback); return; }
+      const script = document.createElement('script');
+      script.src = SCRIPT_URL;
+      script.async = true;
+      script.setAttribute('data-twikoo-loader', '');
+      script.addEventListener('load', callback);
+      document.head.appendChild(script);
+    }
+
+    function initTwikoo() {
+      const el = document.getElementById('tcomment');
+      if (!el) return;
+      const dynamicConfig = Object.assign({}, config, { el: '#tcomment', path: getCurrentPath() });
+      loadTwikooScript(function () {
+        if (typeof window.twikoo === 'undefined') return;
+        el.innerHTML = '';
+        window.twikoo.init(dynamicConfig).then(fixOwOImages).catch(function (error) {
           console.error('[Twikoo] 初始化失败:', error);
         });
-      }
-    } else {
-      // 如果 Twikoo 未加载，稍后重试
-      setTimeout(initTwikoo, 500);
+      });
     }
-  }
-  
-  // 页面加载时初始化
-  document.addEventListener('DOMContentLoaded', initTwikoo);
-  
-  // Swup 页面切换后重新初始化
-  if (window.swup && window.swup.hooks) {
-    window.swup.hooks.on('content:replace', function() {
-      setTimeout(initTwikoo, 200);
-    });
-  } else {
-    document.addEventListener('swup:enable', function() {
+
+    // 只有留言區接近視窗時才載入 Twikoo（含遠端 API 請求），
+    // 避免沒滑到留言就付出它的下載與網路成本。
+    function observeComments() {
+      const el = document.getElementById('tcomment');
+      if (!el) return;
+      const key = getCurrentPath();
+      if (initedFor === key) return;
+      if (typeof IntersectionObserver === 'undefined') { initedFor = key; initTwikoo(); return; }
+      const io = new IntersectionObserver(function (entries) {
+        for (let i = 0; i < entries.length; i++) {
+          if (entries[i].isIntersecting) {
+            io.disconnect();
+            if (initedFor === key) return;
+            initedFor = key;
+            initTwikoo();
+            return;
+          }
+        }
+      }, { rootMargin: '300px 0px' });
+      io.observe(el);
+    }
+
+    // OwO 面板動態插入時補尺寸
+    const owoObserver = new MutationObserver(fixOwOImages);
+    if (document.body) owoObserver.observe(document.body, { childList: true, subtree: true });
+
+    document.addEventListener('DOMContentLoaded', observeComments);
+    document.addEventListener('mizuki:page:loaded', observeComments);
+    document.addEventListener('swup:enable', observeComments);
+
+    // swup 換頁後內容被替換，重新觀察
+    function bindSwup() {
       if (window.swup && window.swup.hooks) {
-        window.swup.hooks.on('content:replace', function() {
-          setTimeout(initTwikoo, 200);
+        window.swup.hooks.on('content:replace', function () {
+          initedFor = null;
+          setTimeout(observeComments, 200);
         });
       }
-    });
-  }
-  
-  // 自定义事件监听
-  document.addEventListener('mizuki:page:loaded', function() {
-    const commentEl = document.getElementById('tcomment');
-    if (commentEl) {
-      console.log('[Twikoo] 通过自定义事件重新初始化');
-      initTwikoo();
     }
-  });
+    if (window.swup && window.swup.hooks) bindSwup();
+    else document.addEventListener('swup:enable', bindSwup);
+
+    // 若 script 在 DOMContentLoaded 之後才執行（module），直接觀察。
+    if (document.readyState !== 'loading') observeComments();
+  })();
 </script>
 
 <style is:global>
-  /* Twikoo 的 OwO 表情面板由 JS 產生，圖示沒有 width/height 屬性。
-     給它明確的 aspect-ratio，避免 lazy 載入造成版面位移（CLS）。 */
+  /* Twikoo 的 OwO 表情面板由 JS 產生，給明確 aspect-ratio 避免 CLS。 */
   .OwO-items-image img {
     aspect-ratio: 1 / 1;
   }

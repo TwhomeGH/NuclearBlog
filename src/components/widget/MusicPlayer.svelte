@@ -144,19 +144,54 @@ function saveVolumeSettings() {
 	}
 }
 
+// 播放清單本地快取：取得後在 TTL 內不再重複打第三方 API。
+const PLAYLIST_CACHE_KEY = "music-player-playlist-v1";
+const PLAYLIST_TTL = 60 * 60 * 1000; // 1 小時
+const playlistCacheId = `${meting_server}|${meting_type}|${meting_id}`;
+
 async function fetchMetingPlaylist() {
 	if (!meting_api || !meting_id) return;
 	isLoading = true;
-	const apiUrl = meting_api
-		.replace(":server", meting_server)
-		.replace(":type", meting_type)
-		.replace(":id", meting_id)
-		.replace(":auth", "")
-		.replace(":r", Date.now().toString());
 	try {
-		const res = await fetch(apiUrl);
-		if (!res.ok) throw new Error("meting api error");
-		const list = await res.json();
+		let list: MetingSong[] | null = null;
+		// 先看本地快取（同 server/type/id 且未過期才用）
+		try {
+			const raw = localStorage.getItem(PLAYLIST_CACHE_KEY);
+			if (raw) {
+				const cached = JSON.parse(raw);
+				if (
+					cached &&
+					cached.id === playlistCacheId &&
+					Array.isArray(cached.list) &&
+					Date.now() - cached.time < PLAYLIST_TTL
+				) {
+					list = cached.list;
+				}
+			}
+		} catch {
+			// 快取壞掉就忽略，改用網路
+		}
+
+		if (!list) {
+			const apiUrl = meting_api
+				.replace(":server", meting_server)
+				.replace(":type", meting_type)
+				.replace(":id", meting_id)
+				.replace(":auth", "")
+				.replace(":r", Date.now().toString());
+			const res = await fetch(apiUrl);
+			if (!res.ok) throw new Error("meting api error");
+			list = await res.json();
+			try {
+				localStorage.setItem(
+					PLAYLIST_CACHE_KEY,
+					JSON.stringify({ id: playlistCacheId, time: Date.now(), list }),
+				);
+			} catch {
+				// 容量不足或隱私模式，忽略
+			}
+		}
+
 		playlist = list.map((song: MetingSong) => {
 			let title = song.name ?? song.title ?? i18n(Key.unknownSong);
 		let artist = song.artist ?? song.author ?? i18n(Key.unknownArtist);
@@ -182,7 +217,23 @@ async function fetchMetingPlaylist() {
 	}
 }
 
-function togglePlay() {
+// 延後到第一次與播放器互動才載入清單，避免每次進站都向第三方 API 發請求。
+let playlistLoaded = false;
+function ensurePlaylist(): Promise<void> {
+	if (playlistLoaded) return Promise.resolve();
+	playlistLoaded = true;
+	if (mode === "meting") return fetchMetingPlaylist();
+	playlist = [...localPlaylist];
+	if (playlist.length > 0) {
+		loadSong(playlist[0]);
+	} else {
+		showErrorMessage("本地播放列表为空");
+	}
+	return Promise.resolve();
+}
+
+async function togglePlay() {
+	await ensurePlaylist();
 	if (!audio || !currentSong.url) return;
 	if (isPlaying) {
 		audio.pause();
@@ -202,7 +253,7 @@ function handleReadingToolOpen(event: Event) {
 
 function toggleExpanded() {
 	isExpanded = !isExpanded;
-	if (isExpanded) announceMusicOpen();
+	if (isExpanded) { announceMusicOpen(); ensurePlaylist(); }
 	if (isExpanded) {
 		showPlaylist = false;
 		isHidden = false;
@@ -211,7 +262,7 @@ function toggleExpanded() {
 
 function toggleHidden() {
 	isHidden = !isHidden;
-	if (!isHidden) announceMusicOpen();
+	if (!isHidden) { announceMusicOpen(); ensurePlaylist(); }
 	if (isHidden) {
 		isExpanded = false;
 		showPlaylist = false;
@@ -220,6 +271,7 @@ function toggleHidden() {
 
 function togglePlaylist() {
 	showPlaylist = !showPlaylist;
+	ensurePlaylist();
 }
 
 function toggleShuffle() {
@@ -452,17 +504,8 @@ onMount(() => {
 	if (!musicPlayerConfig.enable) {
 		return;
 	}
-	if (mode === "meting") {
-		fetchMetingPlaylist();
-	} else {
-		// 使用本地播放列表，不发送任何API请求
-		playlist = [...localPlaylist];
-		if (playlist.length > 0) {
-			loadSong(playlist[0]);
-		} else {
-			showErrorMessage("本地播放列表为空");
-		}
-	}
+	// 不在 onMount 載入清單；改為第一次與播放器互動時載入（ensurePlaylist），
+	// 避免每次進站就向第三方 meting API 發請求（也避免 CORB 噪音）。
 });
 
 onDestroy(() => {
