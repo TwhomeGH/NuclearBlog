@@ -191,9 +191,9 @@ if (siteConfig.font) {
 						"gtm.start": new Date().getTime(),
 						event: "gtm.js",
 					});
-					var f = d.getElementsByTagName(s)[0],
-						j = d.createElement(s),
-						dl = l != "dataLayer" ? "&l=" + l : "";
+					const f = d.getElementsByTagName(s)[0],
+			j = d.createElement(s),
+			dl = l != "dataLayer" ? "&l=" + l : "";
 					j.async = true;
 					j.src =
 						"https://www.googletagmanager.com/gtm.js?id=" + i + dl;
@@ -560,10 +560,10 @@ function disableAnimation() {
 				document.addEventListener("click", async (event) => {
 					// @ts-ignore
 					// let _panelDom = document.getElementById(panel);
-					let tDom = event.target;
+					const tDom = event.target;
 					if (!(tDom instanceof Node)) return; // Ensure the event target is an HTML Node
-					for (let ig of ignores) {
-						let ie = document.getElementById(ig);
+					for (const ig of ignores) {
+						const ie = document.getElementById(ig);
 						if (ie == tDom || ie?.contains(tDom)) {
 							return;
 						}
@@ -697,10 +697,10 @@ function disableAnimation() {
 			if (isMobile) {
 				// 移动端：只显示有mobile图片的项目
 				return item.querySelector(".block.md\\:hidden");
-			} else {
+			} 
 				// 桌面端/平板端：只显示有desktop图片的项目
 				return item.querySelector(".hidden.md\\:block");
-			}
+			
 		});
 
 		if (validItems.length > 1 && siteConfig.banner.carousel?.enable) {
@@ -1129,7 +1129,7 @@ function disableAnimation() {
 				}
 
 				// Hide the TOC while scrolling back to top
-				let toc = document.getElementById("toc-wrapper");
+				const toc = document.getElementById("toc-wrapper");
 				if (toc) {
 					toc.classList.add("toc-not-ready");
 				}
@@ -1238,9 +1238,9 @@ function disableAnimation() {
 		}
 	}
 
-	let backToTopBtn = document.getElementById("back-to-top-btn");
-	let toc = document.getElementById("toc-wrapper");
-	let navbar = document.getElementById("navbar-wrapper");
+	const backToTopBtn = document.getElementById("back-to-top-btn");
+	const toc = document.getElementById("toc-wrapper");
+	const navbar = document.getElementById("navbar-wrapper");
 
 	// 节流函数
 	function throttle(func: Function, limit: number) {

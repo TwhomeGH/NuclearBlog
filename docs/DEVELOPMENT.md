@@ -15,6 +15,22 @@ corepack pnpm dev
 
 `dev` 與 `start` 已綁定 `0.0.0.0`。平板請開啟終端顯示的電腦區網 IP，例如 `http://192.168.0.102:4321/`，IP 以當下輸出為準。`0.0.0.0` 是監聽位址，不能拿來當平板的目的網址；裝置須能互通，Windows 防火牆也須允許該服務。
 
+### 背景 dev server 管理
+
+Astro 7 的 `astro dev` 會以背景 daemon 執行，重複啟動時預設會拒絕並提示「already running」。因此本專案的 `dev`／`start` 會**先停止舊的再啟動**（`astro dev stop && astro dev --host ...`），不會殘留幽靈進程。
+
+常用的管理指令：
+
+| 指令 | 作用 |
+| --- | --- |
+| `corepack pnpm dev:stop` | 停止背景 dev server |
+| `corepack pnpm dev:status` | 查看是否在跑、PID 與位址 |
+| `corepack pnpm dev:logs` | 查看日誌 |
+| `corepack pnpm dev:logs:follow` | 即時跟隨日誌 |
+| `corepack pnpm dev:panel` | 開啟本機網頁控制台 |
+
+`dev:panel` 會啟動一個只綁定 `127.0.0.1` 的小網頁（預設埠 4323，被占用時自動往上找可用埠），提供狀態、啟動、停止、重啟（可清快取）與即時日誌，並自動開啟瀏覽器。關閉面板（Ctrl+C）不會停止 dev server。
+
 Corepack 快取損壞或 pnpm 無法啟動時，參閱 [部署指南](DEPLOYMENT.md)，先確認 Node、Corepack 與專案指定版本，避免同時混用不同安裝來源。
 
 ## 文章存檔後沒有更新
@@ -29,7 +45,7 @@ Corepack 快取損壞或 pnpm 無法啟動時，參閱 [部署指南](DEPLOYMENT
 corepack pnpm dev:refresh
 ```
 
-此命令使用 `astro dev --force --host 0.0.0.0`。一般寫文章不需要每次重啟；仍有問題時，記錄「檔案事件有沒有出現」與「重新請求是否仍回傳舊內容」，再判斷監看或渲染快取問題。目前沒有全域啟用 polling。
+此命令使用 `astro dev stop && astro dev --force --host 0.0.0.0`，會先停掉既有背景 server，再以清快取方式啟動。一般寫文章不需要每次重啟；仍有問題時，記錄「檔案事件有沒有出現」與「重新請求是否仍回傳舊內容」，再判斷監看或渲染快取問題。目前沒有全域啟用 polling。
 
 ## 驗證與建置
 
@@ -39,6 +55,19 @@ corepack pnpm exec astro build
 ```
 
 上述建置只驗證 Astro。完整發佈流程使用 `corepack pnpm build`，還會執行內容同步、番劇資料更新、Pagefind 與字型壓縮；執行前確認內容同步設定。避免一邊執行檢查／建置、一邊驗證既有開發頁面，重整 Vite 快取可能使舊頁面持有失效的模組網址。
+
+## 單元測試
+
+核心邏輯的單元測試放在 `Test/`，使用 [Vitest](../vitest.config.ts)：
+
+```powershell
+corepack pnpm test        # 跑一次
+corepack pnpm test:watch  # 監看模式
+```
+
+目前涵蓋純函式與外掛：`src/utils/date-utils`、`url-utils`、`permalink-utils`，以及 `src/plugins/` 的 `rehype-image-width`、`rehype-video-width`、`video-assets`。別名由 `vitest.config.ts` 對齊 `tsconfig.json` 的 paths。
+
+組件與型別檢查由 `corepack pnpm check`（`astro check`）負責。CI 的 [CI.yml](../.github/workflows/CI.yml) 跑檢查與建置，[test.yml](../.github/workflows/test.yml) 跑單元測試，[lint.yml](../.github/workflows/lint.yml) 跑 ESLint 與型別檢查。
 
 ## 升級維護重點
 

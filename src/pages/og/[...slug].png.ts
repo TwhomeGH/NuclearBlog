@@ -140,7 +140,7 @@ export async function GET({
 				width: "100%",
 				display: "flex",
 				flexDirection: "column",
-				backgroundColor: backgroundColor,
+				backgroundColor,
 				fontFamily:
 					'"Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
 				padding: "60px",

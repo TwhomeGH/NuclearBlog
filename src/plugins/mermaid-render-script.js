@@ -315,7 +315,7 @@
 			// 更新 Mermaid 主题（只需要更新一次）
 			window.mermaid.initialize({
 				startOnLoad: false,
-				theme: theme,
+				theme,
 				themeVariables: {
 					fontFamily: "inherit",
 					fontSize: "16px",

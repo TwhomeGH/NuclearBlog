@@ -150,14 +150,14 @@ async function loadButtonScript() {
         // 导入面板管理器
         const { panelManager } = await import('../utils/panel-manager.js');
         
-        let settingBtn = document.getElementById("display-settings-switch");
+        const settingBtn = document.getElementById("display-settings-switch");
         if (settingBtn) {
             settingBtn.onclick = async function () {
                 await panelManager.togglePanel('display-setting');
             };
         }
 
-        let menuBtn = document.getElementById("nav-menu-switch");
+        const menuBtn = document.getElementById("nav-menu-switch");
         if (menuBtn) {
             menuBtn.onclick = async function () {
                 await panelManager.togglePanel('nav-menu-panel');
@@ -166,20 +166,20 @@ async function loadButtonScript() {
     } catch (error) {
         console.error('Failed to load panel manager:', error);
         // 备用逻辑
-        let settingBtn = document.getElementById("display-settings-switch");
+        const settingBtn = document.getElementById("display-settings-switch");
         if (settingBtn) {
             settingBtn.onclick = function () {
-                let settingPanel = document.getElementById("display-setting");
+                const settingPanel = document.getElementById("display-setting");
                 if (settingPanel) {
                     settingPanel.classList.toggle("float-panel-closed");
                 }
             };
         }
 
-        let menuBtn = document.getElementById("nav-menu-switch");
+        const menuBtn = document.getElementById("nav-menu-switch");
         if (menuBtn) {
             menuBtn.onclick = function () {
-                let menuPanel = document.getElementById("nav-menu-panel");
+                const menuPanel = document.getElementById("nav-menu-panel");
                 if (menuPanel) {
                     menuPanel.classList.toggle("float-panel-closed");
                 }
