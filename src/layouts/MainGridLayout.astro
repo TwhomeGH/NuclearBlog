@@ -464,25 +464,25 @@ const transparentClass = shouldEnableTransparency
 	
 	// 支持 Swup 页面过渡 - 在内容替换之前就应用布局，避免闪烁
 	function setupSwupLayoutSync() {
-		// @ts-ignore
+		// @ts-expect-error window 全域未在型別中宣告
 		if (typeof window !== 'undefined' && window.swup) {
 			// 关键：在 content:replace 之前（animation:out:start）就准备好布局状态
-			// @ts-ignore
+			// @ts-expect-error window 全域未在型別中宣告
 			window.swup.hooks.on('animation:out:start', function() {
 				// 保存当前布局状态，以便在新页面中立即应用
 				const savedLayout = localStorage.getItem('postListLayout');
 				if (savedLayout) {
-					// @ts-ignore
+					// @ts-expect-error window 全域未在型別中宣告
 					window.__pendingLayoutMode = savedLayout;
 				}
 			});
 			
 			// 在内容替换后立即应用布局，不等待其他脚本
-			// @ts-ignore
+			// @ts-expect-error window 全域未在型別中宣告
 			window.swup.hooks.on('content:replace', function() {
 				const mainGrid = document.getElementById('main-grid');
 				if (mainGrid) {
-					// @ts-ignore
+					// @ts-expect-error window 全域未在型別中宣告
 					const currentLayout = window.__pendingLayoutMode || localStorage.getItem('postListLayout') || defaultPostListLayout;
 					mainGrid.setAttribute('data-layout-mode', currentLayout);
 					
@@ -513,7 +513,7 @@ const transparentClass = shouldEnableTransparency
 					}
 					
 					// 清除临时状态
-					// @ts-ignore
+					// @ts-expect-error window 全域未在型別中宣告
 					delete window.__pendingLayoutMode;
 				}
 			});
@@ -626,6 +626,8 @@ const transparentClass = shouldEnableTransparency
                                 <ImageWrapper 
                                     alt={`Mobile banner image ${index + 1}`} 
                                     class:list={["block md:hidden object-cover h-full w-full transition-transform duration-500 ease-out"]}
+                                    width={1080}
+                                    height={1920}
                                     src={Array.isArray(bannerImages.mobile) ? bannerImages.mobile[index] : (typeof bannerImages.mobile === 'string' ? bannerImages.mobile : '')} 
                                     position={siteConfig.banner.position}
                                     loading={index === 0 ? "eager" : "lazy"}
@@ -636,6 +638,8 @@ const transparentClass = shouldEnableTransparency
                                 <ImageWrapper 
                                     alt={`Desktop banner image ${index + 1}`} 
                                     class:list={["hidden md:block object-cover h-full w-full transition-transform duration-500 ease-out"]}
+                                    width={1920}
+                                    height={1080}
                                     src={Array.isArray(bannerImages.desktop) ? bannerImages.desktop[index] : (typeof bannerImages.desktop === 'string' ? bannerImages.desktop : '')} 
                                     position={siteConfig.banner.position}
                                     loading={index === 0 ? "eager" : "lazy"}

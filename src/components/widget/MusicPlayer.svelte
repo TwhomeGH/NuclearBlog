@@ -9,6 +9,18 @@ import { musicPlayerConfig } from "../../config";
 import Key from "../../i18n/i18nKey";
 import { i18n } from "../../i18n/translation";
 
+// Meting API 回傳的單曲資料（欄位依來源而異，故多為選填）
+interface MetingSong {
+	id?: string | number;
+	name?: string;
+	title?: string;
+	artist?: string;
+	author?: string;
+	duration?: number;
+	pic?: string;
+	url?: string;
+}
+
 // 音乐播放器模式，可选 "local" 或 "meting"，从本地配置中获取或使用默认值 "meting"
 let mode = musicPlayerConfig.mode ?? "meting";
 // Meting API 地址，从配置中获取或使用默认地址(bilibili.uno(由哔哩哔哩松坂有希公益管理)),服务器在海外,部分音乐平台可能不支持并且速度可能慢,也可以自建Meting API
@@ -145,7 +157,7 @@ async function fetchMetingPlaylist() {
 		const res = await fetch(apiUrl);
 		if (!res.ok) throw new Error("meting api error");
 		const list = await res.json();
-		playlist = list.map((song: any) => {
+		playlist = list.map((song: MetingSong) => {
 			let title = song.name ?? song.title ?? i18n(Key.unknownSong);
 		let artist = song.artist ?? song.author ?? i18n(Key.unknownArtist);
 			let dur = song.duration ?? 0;
@@ -514,7 +526,7 @@ onDestroy(() => {
         <img src={getAssetPath(currentSong.cover || "/favicon/favicon.ico")}
              alt={currentSong.title} draggable="false"
              on:error={(event) => {
-                 const img = event.currentTarget;
+                 const img = event.currentTarget as HTMLImageElement;
                  if (!img.src.endsWith("/favicon/favicon.ico")) img.src = "/favicon/favicon.ico";
              }} />
     </button>
@@ -542,7 +554,7 @@ onDestroy(() => {
                      class:animate-pulse={isLoading} />
                 <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                     {#if isLoading}
-                        <Icon icon="eos-icons:loading" class="text-white text-xl" />
+                        <Icon icon="mdi:loading" class="text-white text-xl animate-spin" />
                     {:else if isPlaying}
                         <Icon icon="material-symbols:pause" class="text-white text-xl" />
                     {:else}
@@ -653,7 +665,7 @@ onDestroy(() => {
                     disabled={isLoading}
                     on:click={togglePlay}>
                 {#if isLoading}
-                    <Icon icon="eos-icons:loading" class="text-xl" />
+                    <Icon icon="mdi:loading" class="text-xl animate-spin" />
                 {:else if isPlaying}
                     <Icon icon="material-symbols:pause" class="text-xl" />
                 {:else}
@@ -724,7 +736,7 @@ onDestroy(() => {
                 </button>
             </div>
             <div class="playlist-content overflow-y-auto max-h-80 hide-scrollbar">
-                {#each playlist as song, index}
+                {#each playlist as song, index (song.url || song.title || index)}
                     <div class="playlist-item flex items-center gap-3 p-3 hover:bg-[var(--btn-plain-bg-hover)] cursor-pointer transition-colors"
                          class:bg-[var(--btn-plain-bg)]={index === currentIndex}
                          class:text-[var(--primary)]={index === currentIndex}
@@ -748,7 +760,7 @@ onDestroy(() => {
                             {/if}
                         </div>
                         <div class="w-10 h-10 rounded-lg overflow-hidden bg-[var(--btn-regular-bg)] flex-shrink-0">
-                            <img src={getAssetPath(song.cover)} alt={song.title} loading="lazy" class="w-full h-full object-cover" />
+                            <img src={getAssetPath(song.cover)} alt={song.title} width="300" height="300" loading="lazy" class="w-full h-full object-cover" />
                         </div>
                         <div class="flex-1 min-w-0">
                             <div class="font-medium truncate" class:text-[var(--primary)]={index === currentIndex} class:text-90={index !== currentIndex}>

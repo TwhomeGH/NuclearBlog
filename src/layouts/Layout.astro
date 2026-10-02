@@ -501,7 +501,6 @@ if (siteConfig.font) {
 	import { initSakura } from "../utils/sakura-manager";
 
 	// const setTimeout = window.setTimeout;
-	// @ts-ignore
 	const setTimeout = (callback: any, delay: any) =>
 		window.setTimeout(callback, delay);
 
@@ -553,12 +552,10 @@ function disableAnimation() {
 	// 导入面板管理器
 	async function initializePanelManager() {
 		try {
-			// @ts-ignore
 			const { panelManager } = await import("../utils/panel-manager.js");
 
 			function setClickOutsideToClose(panel: string, ignores: string[]) {
 				document.addEventListener("click", async (event) => {
-					// @ts-ignore
 					// let _panelDom = document.getElementById(panel);
 					const tDom = event.target;
 					if (!(tDom instanceof Node)) return; // Ensure the event target is an HTML Node

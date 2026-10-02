@@ -97,7 +97,7 @@ const sizeClasses = getSizeClasses(size);
     <div class={`overflow-hidden ${size === 'large' ? 'aspect-video' : 'aspect-[4/3]'}`}>
       <img 
         src={project.image} 
-        alt={project.title}
+        alt={project.title} width="1200" height="675"
         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         loading="lazy"
       />

@@ -255,7 +255,7 @@ onDestroy(() => {
       dark:bg-white/5 dark:hover:bg-white/10 dark:focus-within:bg-white/10
   ">
         <Icon icon="material-symbols:search" class="absolute text-[1.25rem] pointer-events-none ml-3 transition my-auto text-black/30 dark:text-white/30"></Icon>
-        <input placeholder={i18n(I18nKey.search)} bind:value={keywordMobile}
+        <input id="search-input-mobile" name="search" aria-label={i18n(I18nKey.search)} placeholder={i18n(I18nKey.search)} bind:value={keywordMobile}
                class="pl-10 absolute inset-0 text-sm bg-transparent outline-0
                focus:w-60 text-black/50 dark:text-white/50"
         >

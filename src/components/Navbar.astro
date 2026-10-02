@@ -49,10 +49,10 @@ const iconSrc = rawIcon.match(/^(http|https|\/\/)/) ? rawIcon : url(rawIcon);
 				{/* 使用navbarTitle配置或默认配置 */}
                 {siteConfig.navbarTitle ? (
                     siteConfig.navbarTitle.mode === "logo" ? (
-                        <img src={logoSrc} alt={siteConfig.navbarTitle.text} class="h-[2.5rem] md:h-[3.25rem] md:[.enable-banner_&]:h-[2.5rem] md:[.enable-banner_&]:group-[.scrolled]:h-[3.25rem] max-w-full object-contain transition-all duration-300" loading="lazy" />
+                        <img src={logoSrc} alt={siteConfig.navbarTitle.text} width="772" height="254" class="w-auto h-[2.5rem] md:h-[3.25rem] md:[.enable-banner_&]:h-[2.5rem] md:[.enable-banner_&]:group-[.scrolled]:h-[3.25rem] max-w-full object-contain transition-all duration-300" loading="lazy" />
                     ) : (
                         <>
-                            <img src={iconSrc} alt={siteConfig.navbarTitle.text} class="h-[1.75rem] w-[1.75rem] mr-2 object-contain" loading="lazy" />
+                            <img src={iconSrc} alt={siteConfig.navbarTitle.text} width="28" height="28" class="h-[1.75rem] w-[1.75rem] mr-2 object-contain" loading="lazy" />
                             <span class="dark:text-white text-black">{siteConfig.navbarTitle.text}</span>
                         </>
                     )
@@ -196,14 +196,13 @@ function initSemifullScrollDetection() {
     if (!navbar) return;
     
     // 移除之前的滚动事件监听器（如果存在）
-    // @ts-ignore
+    // @ts-expect-error window 全域未在型別中宣告
     if (window.semifullScrollHandler) {
-        // @ts-ignore
+        // @ts-expect-error window 全域未在型別中宣告
         window.removeEventListener('scroll', window.semifullScrollHandler);
     }
     
     // 获取当前是否为首页
-    // @ts-ignore
     const isHomePage = navbar.dataset.isHome === 'true';
 
     // 如果不是首页，在平板/桌面端强制显示为scrolled状态
@@ -235,7 +234,7 @@ function initSemifullScrollDetection() {
     }
     
     // 保存新的事件处理器引用
-    // @ts-ignore
+    // @ts-expect-error window 全域未在型別中宣告
     window.semifullScrollHandler = requestTick;
     
     // 监听滚动事件
@@ -246,7 +245,6 @@ function initSemifullScrollDetection() {
 }
 
 // 将函数暴露到全局对象，供页面切换时调用
-// @ts-ignore
 window.initSemifullScrollDetection = initSemifullScrollDetection;
 
 // 页面加载完成后初始化滚动检测
