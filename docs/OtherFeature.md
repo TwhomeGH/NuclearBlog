@@ -3,15 +3,16 @@
 
 主要是額外支持了 `Video` 組件
 
-你能以以下方式插入視頻
+你能以以下方式插入視頻（**所有參數必須在同一行**）：
 
-```
-:::video[Demo Clip]{ src="https://coffee3322.ccwu.cc/api/s/xf1q1s/VID_20260505_212018.mp4" controls=true autoplay=false width="100%" height="468px" muted=true}
+```md
+::video[Demo Clip]{ src="./VID_20260505_212018.mp4" controls=true autoplay=false muted=true width="100%" height="468px"}
 ```
 
-> [!TIP]
-> 注意請確保他所有參數在同一行 而不是換行過後的
->
+- `src` 用**相對路徑**＝本地影片：建置時依內容雜湊成 `/media/<檔名>.<hash>.<副檔名>`，可永久快取、支援 HTTP Range，內容有變才換 URL。
+- `src` 以 `http(s)://` 開頭＝**外部影片**：外掛不改寫，快取與 Range 取決於對方主機（若對方沒有 ETag/Last-Modified 且 `max-age` 很短，過期後會整個檔案重抓）。
+
+完整的參數表、本地／外部差異、快取與 Range 機制見 [影片與圖片載入](MEDIA_ASSETS.md)。
 
 然後也對 `Image` 組件做了調整
 
@@ -19,17 +20,9 @@
 ![ice0 h-344px](./ice0.jpg)
 ```
 
-他原本只支持對 `width` 進行調整
-
-現在額外支持了高度控制
-
-原本他只支持用 `%`
-
-現在讓他可以用兩種形式
-
-```txt
-![ice0 h-100%](./ice0.jpg)
-```
+- 原本只支持對 `width` 進行調整，現在額外支持高度控制。
+- 原本他只支持用 `%`，現在 `%` 與 `px` 都可以。
+- 另外開啟了響應式圖片：Markdown 圖片會自動產生 `srcset`，並依實際欄寬注入 `sizes`，只下載接近顯示寬度的版本（不再固定抓原圖畫素）。詳見 [影片與圖片載入](MEDIA_ASSETS.md)。
 
 ## CodeQL 近期修正
 

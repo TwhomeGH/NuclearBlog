@@ -9,6 +9,7 @@
 - [浮動目錄與音樂播放器](READING_TOOLS.md)：收合、拖曳、位置保存及設定。
 - [Markdown 圖表](MARKDOWN_CHARTS.md)：Mermaid／ECharts 語法、互動與間距。
 - [系列文章與長文拆分](ARTICLE_SERIES.md)：metadata、排序、導覽與草稿。
+- [影片與圖片載入](MEDIA_ASSETS.md)：`::video` 指令、本地/外部影片、快取與 Range、響應式圖片尺寸。
 
 正式功能說明以本目錄為入口，網站中的 example 文章用於展示效果。原有 MIGRATION_GUIDE 仍專門說明內容倉庫遷移。
 
@@ -127,6 +128,7 @@ docs/
 ├── READING_TOOLS.md             # 浮動目錄與播放器
 ├── MARKDOWN_CHARTS.md           # Mermaid 與 ECharts
 ├── ARTICLE_SERIES.md            # 系列文章與拆分
+├── MEDIA_ASSETS.md              # 影片與圖片載入/快取
 ├── CONTENT_SEPARATION.md        # 内容分离核心指南
 ├── CONTENT_REPOSITORY.md        # 内容仓库结构
 ├── MIGRATION_GUIDE.md           # 迁移指南
