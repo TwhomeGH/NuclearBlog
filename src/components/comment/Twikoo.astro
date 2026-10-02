@@ -80,3 +80,11 @@ const config = {
     }
   });
 </script>
+
+<style is:global>
+  /* Twikoo 的 OwO 表情面板由 JS 產生，圖示沒有 width/height 屬性。
+     給它明確的 aspect-ratio，避免 lazy 載入造成版面位移（CLS）。 */
+  .OwO-items-image img {
+    aspect-ratio: 1 / 1;
+  }
+</style>
