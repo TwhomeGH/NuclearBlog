@@ -100,6 +100,21 @@ function buildIndex() {
 	return index;
 }
 
+/** 列出內容目錄中的影片資源（public URL、絕對路徑、位元組大小），供工具使用。 */
+export function listMediaAssets() {
+	const assets = [];
+	for (const [url, abs] of buildIndex()) {
+		let size = 0;
+		try {
+			size = fs.statSync(abs).size;
+		} catch {
+			// 讀不到大小就算了
+		}
+		assets.push({ url, abs, size });
+	}
+	return assets;
+}
+
 function serveRange(req, res, abs) {
 	const stat = fs.statSync(abs);
 	const ext = path.extname(abs).toLowerCase();
