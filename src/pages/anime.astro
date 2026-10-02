@@ -7,7 +7,6 @@ import { i18n } from "../i18n/translation";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import fs from "node:fs";
 import path from "node:path";
-import { widgetManager } from "../utils/widget-manager";
 import "../styles/anime.css";
 
 interface RawAnimeItem {
@@ -50,12 +49,6 @@ type AnimeSourceConfig =
 if (!siteConfig.featurePages.anime) {
 	return Astro.redirect("/404/");
 }
-
-const hasRightSidebars =
-	widgetManager.getComponentsByPosition("top", "right", "desktop").length >
-		0 ||
-	widgetManager.getComponentsByPosition("sticky", "right", "desktop").length >
-		0;
 
 const BANGUMI_USER_ID = siteConfig.bangumi?.userId || "your-user-id";
 const BILIBILI_VMID = siteConfig.bilibili?.vmid || "";
@@ -316,6 +309,8 @@ const hiddenAnimeList = animeList.slice(INITIAL_DISPLAY_COUNT);
 													<ImageWrapper
 														src={anime.cover}
 														alt={anime.title}
+														width={600}
+														height={900}
 														class="w-full h-full object-cover transition-transform duration-200 group-hover:scale-110"
 													/>
 													<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -457,6 +452,8 @@ const hiddenAnimeList = animeList.slice(INITIAL_DISPLAY_COUNT);
 													<ImageWrapper
 														src={anime.cover}
 														alt={anime.title}
+														width={600}
+														height={900}
 														class="w-full h-full object-cover transition-transform duration-200 group-hover:scale-110"
 													/>
 													<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -586,7 +583,7 @@ const hiddenAnimeList = animeList.slice(INITIAL_DISPLAY_COUNT);
 		</div>
 	</div>
 
-	<script is:inline define:vars={{ hasRightSidebars }}>
+	<script is:inline>
 		(function () {
 			function initAnimeLayout() {
 				const animeListContainer = document.getElementById(
@@ -829,9 +826,11 @@ const hiddenAnimeList = animeList.slice(INITIAL_DISPLAY_COUNT);
 							!item.classList.contains("anime-hidden");
 
 						if (shouldShow) {
-							isCurrentlyVisible
-								? itemsToKeep.push(item)
-								: itemsToShow.push(item);
+							if (isCurrentlyVisible) {
+								itemsToKeep.push(item);
+							} else {
+								itemsToShow.push(item);
+							}
 						} else {
 							if (isCurrentlyVisible) itemsToHide.push(item);
 						}

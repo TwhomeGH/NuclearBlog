@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import axios from "axios";
 import { loadEnv } from "./load-env.js";
+import { isCacheFresh } from "./lib/anime-cache.mjs";
 
 loadEnv();
 
@@ -125,6 +126,7 @@ async function getAnimeModeFromConfig() {
 		}
 		return "bangumi";
 	} catch (error) {
+		console.warn("[Bilibili] 讀取 config 失敗，回退為 bangumi：", error);
 		return "bangumi";
 	}
 }
@@ -300,15 +302,15 @@ async function getData(
 			rating: bangumi?.rating?.score
 				? parseFloat(bangumi.rating.score.toFixed(1))
 				: 0,
-			cover: cover,
-			description: description,
-			year: year,
-			studio: studio,
-			genre: genre,
-			link: link,
-			progress: progress,
-			totalEpisodes: totalEpisodes,
-			progressPercent: progressPercent,
+			cover,
+			description,
+			year,
+			studio,
+			genre,
+			link,
+			progress,
+			totalEpisodes,
+			progressPercent,
 		};
 	});
 }
@@ -355,6 +357,13 @@ async function main() {
 	if (animeMode !== "bilibili") {
 		console.log(
 			`Detected current anime mode is "${animeMode}", skipping Bilibili data update.`,
+		);
+		return;
+	}
+
+	if (isCacheFresh(OUTPUT_FILE)) {
+		console.log(
+			`[skip] ${path.basename(OUTPUT_FILE)} 尚在快取時效內（${process.env.ANIME_CACHE_TTL_HOURS || 6}h），跳過抓取；設 ANIME_FORCE_UPDATE=1 可強制更新。`,
 		);
 		return;
 	}

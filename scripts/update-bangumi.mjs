@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
+import { isCacheFresh } from "./lib/anime-cache.mjs";
 
 const API_BASE = "https://api.bgm.tv";
 const CONFIG_PATH = path.join(
@@ -76,6 +77,7 @@ async function getAnimeModeFromConfig() {
 		}
 		return "bangumi";
 	} catch (error) {
+		console.warn("[Bangumi] 讀取 config 失敗，回退為 bangumi：", error);
 		return "bangumi";
 	}
 }
@@ -92,6 +94,7 @@ async function fetchSubjectDetail(subjectId) {
 		if (!response.ok) return null;
 		return await response.json();
 	} catch (error) {
+		console.warn(`[Bangumi] 取得 subject ${subjectId} 失敗：`, error);
 		return null;
 	}
 }
@@ -213,21 +216,21 @@ async function processData(items, status) {
 		results.push({
 			title:
 				item.subject?.name_cn || item.subject?.name || "Unknown Title",
-			status: status,
-			rating: rating,
+			status,
+			rating,
 			cover: item.subject?.images?.medium || "/assets/anime/default.webp",
-			description: description,
+			description,
 			episodes: `${totalEpisodes} episodes`,
-			year: year,
+			year,
 			genre: item.subject?.tags
 				? item.subject.tags.slice(0, 3).map((tag) => tag.name)
 				: ["Unknown"],
-			studio: studio,
+			studio,
 			link: item.subject?.id
 				? `https://bgm.tv/subject/${item.subject.id}`
 				: "#",
-			progress: progress,
-			totalEpisodes: totalEpisodes,
+			progress,
+			totalEpisodes,
 			startDate: item.subject?.date || "",
 			endDate: item.subject?.date || "",
 		});
@@ -243,6 +246,13 @@ async function main() {
 	if (animeMode !== "bangumi") {
 		console.log(
 			`Detected current anime mode is "${animeMode}", skipping Bangumi data update.`,
+		);
+		return;
+	}
+
+	if (isCacheFresh(OUTPUT_FILE)) {
+		console.log(
+			`[skip] ${path.basename(OUTPUT_FILE)} 尚在快取時效內（${process.env.ANIME_CACHE_TTL_HOURS || 6}h），跳過抓取；設 ANIME_FORCE_UPDATE=1 可強制更新。`,
 		);
 		return;
 	}
