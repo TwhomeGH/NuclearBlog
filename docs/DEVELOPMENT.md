@@ -78,3 +78,11 @@ Markdown 插件集中在 [astro.config.mjs](../astro.config.mjs) 的 `markdown.p
 `LocalFonts.astro` 依 `src/config.ts` 的字型設定產生宣告。`pnpm dev` 直接載入 `public/assets/font/` 的原始 TTF，不必先壓縮；ASCII 字型限制在 `U+0000-007F`，中文由 CJK 字型處理。原始字型較大，首次載入時會先顯示替代字型，再切換至自訂字型。
 
 正式環境中啟用 `enableCompress` 的 TTF 改用 WOFF2 子集。請使用完整 `pnpm build` 產生壓縮檔，再執行 `pnpm preview`；單獨 `astro build` 不包含字型壓縮步驟。更換字型時更新 `fontFamily`、`fontWeight` 與 `localFonts`，不用另改 main.css。
+
+## Clarity 行為分析
+
+Clarity 使用專案 `ytd2zio6uv`，由 `Layout.astro` 手動載入。只有正式建置會輸出載入程式；`pnpm dev` 不載入，正式產物在 localhost／127.0.0.1／IPv6 loopback 預覽也不載入。部署後需到 Clarity 後台確認資料是否收到，程式建置成功不代表後台已驗證。
+
+載入程式會避免重複插入 Clarity script。不要再透過 GTM 或 NPM 安裝同一個 Clarity 追蹤器。此處的環境控制只針對 Clarity，現有 GTM 設定另行管理。
+
+Fork 或部署預覽站點前，請閱讀 [流量統計與 fork 前設定](ANALYTICS.md)，確認追蹤 ID 歸屬、停用方式及預覽環境限制。

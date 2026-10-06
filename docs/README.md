@@ -2,6 +2,10 @@
 
 欢迎查阅 Mizuki 的详细文档！
 
+## Fork 部署提醒
+
+部署自己的站點前，請先閱讀 [流量統計與 fork 前設定](ANALYTICS.md)，更換或停用原有 Clarity／GTM 識別碼。
+
 ## 新功能與維護入口
 
 - [本機開發與更新排查](DEVELOPMENT.md)：Node、Astro 7、區網測試與存檔未更新。
