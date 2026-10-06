@@ -1,0 +1,56 @@
+---
+import Calendar from "./Calendar.astro";
+import SiteStats from "./SiteStats.astro";
+import I18nKey from "../../i18n/i18nKey";
+import { i18n } from "../../i18n/translation";
+interface Props { id: string; kind?: "stats" | "calendar" }
+const { id, kind = "stats" } = Astro.props;
+---
+<compact-sidebar-widget data-kind={kind}>
+  <details id={id}>
+    <summary>{kind === "calendar" ? "日曆" : i18n(I18nKey.siteStats)}<span aria-hidden="true">⌄</span></summary>
+    {kind === "calendar" ? <Calendar id={`${id}-values`} compact /> : <SiteStats id={`${id}-values`} />}
+  </details>
+</compact-sidebar-widget>
+<style>
+compact-sidebar-widget { display: block; width: 100%; margin: 24px 0; }
+compact-sidebar-widget[hidden] { display: none !important; }
+details { background: var(--card-bg); border: 1px solid var(--line-divider); border-radius: 16px; overflow: hidden; scroll-margin-top: 100px; }
+summary { display: flex; align-items: center; justify-content: space-between; min-height: 52px; padding: 12px 20px; color: var(--primary); font-weight: 600; cursor: pointer; list-style: none; }
+summary::-webkit-details-marker { display: none; }
+summary:focus-visible { outline: 2px solid var(--primary); outline-offset: -3px; }
+details[open] summary span { transform: rotate(180deg); }
+@media (min-width: 1280px) { compact-sidebar-widget:not([data-ready]) { display: none; } }
+</style>
+<script>
+class CompactSidebarWidget extends HTMLElement {
+  private events?: AbortController;
+  private observer?: MutationObserver;
+  private resize?: ResizeObserver;
+  connectedCallback() {
+    this.events = new AbortController();
+    const options = { signal: this.events.signal };
+    const update = () => {
+      const sideStats = [...document.querySelectorAll(this.dataset.kind === 'calendar' ? 'article-calendar' : 'site-stat-values')].filter(el => !el.closest('compact-sidebar-widget'));
+      this.hidden = sideStats.some(el => (el.querySelector('widget-layout')?.getClientRects().length ?? 0) > 0);
+      this.dataset.ready = 'true';
+    };
+    update();
+    window.addEventListener('resize', update, options);
+    this.observer = new MutationObserver(update);
+    document.querySelectorAll('.right-sidebar-container, #sidebar').forEach(el => this.observer!.observe(el, { attributes: true, subtree: true, attributeFilter: ['class', 'style'] }));
+    this.resize = new ResizeObserver(update);
+    document.querySelectorAll(this.dataset.kind === 'calendar' ? '#calendar-widget' : '#site-stats').forEach(el => this.resize!.observe(el));
+    document.addEventListener(this.dataset.kind === 'calendar' ? 'calendar:open' : 'site-stats:open', () => {
+      update();
+      if (!this.getClientRects().length || this.hidden) return;
+      const details = this.querySelector('details')!;
+      details.open = true;
+      details.querySelector('summary')!.focus({ preventScroll: true });
+      details.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+    }, options);
+  }
+  disconnectedCallback() { this.events?.abort(); this.observer?.disconnect(); this.resize?.disconnect(); }
+}
+if (!customElements.get('compact-sidebar-widget')) customElements.define('compact-sidebar-widget', CompactSidebarWidget);
+</script>

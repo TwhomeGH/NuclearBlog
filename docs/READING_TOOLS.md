@@ -33,3 +33,9 @@
 面板使用獨立拖曳把手，可收合、重設位置，也支援方向鍵移動與 Home 重設；位置保存在 `reading-font-position-v1`。預設位於右側中下方，避開右下角目錄。開啟面板會收合其他閱讀工具，非文章頁隱藏。
 
 維護入口為 `src/components/control/ReadingFont.astro`，共用 `floating-panel.ts` 的拖曳行為；字型偏好在 Layout 的 head 提前套用，降低重新整理時字型切換的閃動。
+
+## 窄螢幕的站點統計與日曆
+
+當側欄組件不可見時，頁尾提供「站點統計」與「日曆」收合列；手機選單可直接展開並跳到對應內容。可見性依實際側欄狀態更新，因此手機、平板與隱藏側欄的版型都有入口。停用組件時不產生該入口。
+
+`CompactSidebarWidget.astro` 負責收合與響應式替代入口，Footer 的兩份版面使用不同 ID。統計沿用 `SiteStats.astro`，日曆沿用 `Calendar.astro`；日曆腳本在 `src/scripts/calendar-runtime.js`，各實例獨立操作並共用資料請求。維護時檢查手機選單、月份／年份切換、日期文章連結、桌機隱藏替代列與 Swup 切頁。

@@ -1,10 +1,15 @@
 ---
+import { sidebarLayoutConfig } from "../../config";
 import { Icon } from "astro-icon/components";
 import { LinkPresets } from "../../constants/link-presets";
 import I18nKey from "../../i18n/i18nKey";
 import { i18n } from "../../i18n/translation";
 import { LinkPreset, type NavBarLink } from "../../types/config";
 import { url } from "../../utils/url-utils";
+
+const statsEnabled = Object.values(sidebarLayoutConfig.components).some(types => types.includes("site-stats"));
+
+const calendarEnabled = Object.values(sidebarLayoutConfig.components).some(types => types.includes("calendar"));
 
 interface Props {
 	links: NavBarLink[];
@@ -40,7 +45,8 @@ type ProcessedNavBarLink = Omit<NavBarLink, "children"> & {
 };
 
 // 处理links中的LinkPreset转换
-const processedLinks: ProcessedNavBarLink[] = Astro.props.links.map(
+const { links } = Astro.props as Props;
+const processedLinks: ProcessedNavBarLink[] = links.map(
 	(link: NavBarLink): ProcessedNavBarLink => ({
 		...link,
 		children: link.children?.map(
@@ -113,6 +119,8 @@ const processedLinks: ProcessedNavBarLink[] = Astro.props.links.map(
             )}
         </div>
     ))}
+    {calendarEnabled && <button type="button" data-open-calendar class="w-full text-left py-3 px-3 rounded-lg font-bold text-black/75 dark:text-white/75 hover:bg-[var(--btn-plain-bg-hover)]">日曆</button>}
+    {statsEnabled && <button type="button" data-open-site-stats class="w-full text-left py-3 px-3 rounded-lg font-bold text-black/75 dark:text-white/75 hover:bg-[var(--btn-plain-bg-hover)]">{i18n(I18nKey.siteStats)}</button>}
 </div>
 
 <style>
@@ -161,4 +169,18 @@ const processedLinks: ProcessedNavBarLink[] = Astro.props.links.map(
             });
         });
     });
+</script>
+
+<script>
+document.addEventListener('click', (event) => {
+  if (!(event.target instanceof Element) || !event.target.closest('[data-open-site-stats], [data-open-calendar]')) return;
+  document.getElementById('nav-menu-panel')?.classList.add('float-panel-closed');
+  const calendar = Boolean(event.target.closest('[data-open-calendar]'));
+  const sidebar = document.querySelector<HTMLElement>(calendar ? '#calendar-widget' : '#site-stats');
+  if (sidebar?.getClientRects().length) {
+    sidebar.setAttribute('tabindex', '-1');
+    sidebar.focus({ preventScroll: true });
+    sidebar.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'center' });
+  } else document.dispatchEvent(new CustomEvent(calendar ? 'calendar:open' : 'site-stats:open'));
+});
 </script>

@@ -1,10 +1,16 @@
 ---
 
+import CompactSidebarWidget from "./widget/CompactSidebarWidget.astro";
+import { sidebarLayoutConfig } from "../config";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { footerConfig, profileConfig } from "../config";
 import { url } from "../utils/url-utils";
 
+interface Props { statsId?: string }
+const { statsId = "footer-site-stats" } = Astro.props;
+const statsEnabled = Object.values(sidebarLayoutConfig.components).some(types => types.includes("site-stats"));
+const calendarEnabled = Object.values(sidebarLayoutConfig.components).some(types => types.includes("calendar"));
 const currentYear = new Date().getFullYear();
 
 // 页脚自定义内容逻辑
@@ -33,6 +39,8 @@ if (footerConfig.enable) {
 }
 ---
 
+{statsEnabled && <CompactSidebarWidget id={statsId} />}
+{calendarEnabled && <CompactSidebarWidget id={`${statsId}-calendar`} kind="calendar" />}
 <div class="transition border-t border-black/10 dark:border-white/15 my-10 border-dashed mx-32"></div>
 <div class="transition border-dashed border-[oklch(85%_0.01_var(--hue))] dark:border-white/15 rounded-2xl mb-12 flex flex-col items-center justify-center px-6">
 	<div class="transition text-50 text-sm text-center">

@@ -12,10 +12,11 @@ import WidgetLayout from "./WidgetLayout.astro";
 
 interface Props {
 	class?: string;
+	id?: string;
 	style?: string;
 }
 
-const { class: className, style } = Astro.props;
+const { class: className, style, id = "site-stats" } = Astro.props;
 
 // 从配置中获取站点开始日期
 const siteStartDate = siteConfig.siteStartDate || "2025-01-01";
@@ -111,9 +112,10 @@ const stats = [
 ];
 ---
 
+<site-stat-values data-start={siteStartDate} data-last={lastPostDate}>
 <WidgetLayout
 	name={i18n(I18nKey.siteStats)}
-	id="site-stats"
+	id={id}
 	class={className}
 	style={style}
 >
@@ -149,49 +151,24 @@ const stats = [
 		}
 	</div>
 </WidgetLayout>
+</site-stat-values>
 
-<script is:inline define:vars={{ siteStartDate, lastPostDate }}>
-	function updateDynamicStats() {
-		const today = new Date();
-
-		// 更新运行天数
-		const startDate = new Date(siteStartDate);
-		const diffTime = Math.abs(today.getTime() - startDate.getTime());
-		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-		const runningDaysElements = document.querySelectorAll(
-			'[data-stat-id="running-days"]',
-		);
-		if (runningDaysElements.length > 0) {
-			runningDaysElements.forEach(element => {
-				element.textContent = diffDays.toString();
-			});
-		}
-
-		// 更新最后活动时间
-		if (lastPostDate) {
-			const lastPost = new Date(lastPostDate);
-			const timeSinceLastPost = Math.abs(
-				today.getTime() - lastPost.getTime(),
-			);
-			const daysSinceLastUpdate = Math.floor(
-				timeSinceLastPost / (1000 * 60 * 60 * 24),
-			);
-
-			const lastUpdateElements = document.querySelectorAll(
-				'[data-stat-id="last-update"]',
-			);
-			if (lastUpdateElements.length > 0) {
-				lastUpdateElements.forEach(element => {
-					element.textContent = daysSinceLastUpdate.toString();
-				})
-			}
-		}
-	}
-
-	// 页面加载时更新
-	updateDynamicStats();
-
-	// 每小时更新一次（可选，因为天数变化较慢）
-	setInterval(updateDynamicStats, 60 * 60 * 1000);
+<script>
+class SiteStatValues extends HTMLElement {
+  private timer?: ReturnType<typeof setInterval>;
+  connectedCallback() {
+    const update = () => {
+      const now = Date.now();
+      const days = (date: string, round: (n: number) => number) => round(Math.abs(now - new Date(date).getTime()) / 86400000);
+      const running = this.querySelector('[data-stat-id="running-days"]');
+      const latest = this.querySelector('[data-stat-id="last-update"]');
+      if (running && this.dataset.start) running.textContent = String(days(this.dataset.start, Math.ceil));
+      if (latest && this.dataset.last) latest.textContent = String(days(this.dataset.last, Math.floor));
+    };
+    update();
+    this.timer = setInterval(update, 3600000);
+  }
+  disconnectedCallback() { clearInterval(this.timer); }
+}
+if (!customElements.get("site-stat-values")) customElements.define("site-stat-values", SiteStatValues);
 </script>
