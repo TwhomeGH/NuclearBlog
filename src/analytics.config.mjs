@@ -5,7 +5,7 @@ export const clarityConfig = {
   projectId: "ytd2zio6uv",
   // 部署 workers/clarity-stats 後填入 https://你的-worker.workers.dev/stats。
   showStats: true,
-  statsEndpoint: "",
+  statsEndpoint: "https://nuclearblog-clarity-stats.fonse454ttcps-ntpc-edu-tw.workers.dev/stats",
 };
 
 export const umamiConfig = {
