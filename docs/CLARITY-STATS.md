@@ -25,29 +25,58 @@
 2. 檢查 `workers/clarity-stats/wrangler.jsonc` 的 Worker 名稱與 `ALLOWED_ORIGIN`；後者填網站 origin（含 https、不加結尾斜線）。Fork 使用自己的 Token 與 origin。
 3. 在專案根目錄使用 Wrangler 登入與部署：
 
-```powershell
-pnpm dlx wrangler login
-pnpm dlx wrangler deploy --config workers/clarity-stats/wrangler.jsonc
-pnpm dlx wrangler secret put CLARITY_API_TOKEN --config workers/clarity-stats/wrangler.jsonc
-```
+    ```powershell
+    pnpm dlx wrangler login
+    pnpm dlx wrangler deploy --config workers/clarity-stats/wrangler.jsonc
+    pnpm dlx wrangler secret put CLARITY_API_TOKEN --config workers/clarity-stats/wrangler.jsonc
+    ```
 
-最後一行會互動要求輸入 Token，勿將 Token 寫在命令參數中。這是獨立 Worker，不需將 Astro 改成 SSR。部署前請確認 Cloudflare 帳號可使用 SQLite Durable Objects。
+    最後一行會互動要求輸入 Token，勿將 Token 寫在命令參數中。這是獨立 Worker，不需將 Astro 改成 SSR。部署前請確認 Cloudflare 帳號可使用 SQLite Durable Objects。
 
-4. 等待下一次排程（UTC 每天 00:17、06:17、12:17、18:17）。首次成功前 `/stats` 回傳 503；這不會觸發即時補抓。從 Worker 日誌確認更新情況。
+4. 等待下一次排程（UTC 每天 00:17、06:17、12:17、18:17）。首次成功前 `/stats` 回傳 HTTP 200、`status: "unavailable"`、`hasData: false`；這不會觸發即時補抓。從 Worker 日誌確認更新情況。
 5. 開啟 `https://你的-worker.workers.dev/stats`，確認回應含 `sessions`、`botSessions`、`periodHours: 72` 與 `updatedAt`，再在 `src/analytics.config.mjs` 設定：
 
-```js
-export const clarityConfig = {
-  enabled: true,
-  projectId: "你的追蹤專案ID",
-  showStats: true,
-  statsEndpoint: "https://你的-worker.workers.dev/stats",
-};
-```
+    ```js
+    export const clarityConfig = {
+      enabled: true,
+      projectId: "你的追蹤專案ID",
+      showStats: true,
+      statsEndpoint: "https://你的-worker.workers.dev/stats",
+    };
+    ```
 
 6. 重新建置、部署部落格，查看站點統計卡片。若要本地連線測試，需暫時把 Worker 的 `ALLOWED_ORIGIN` 改成本地 origin；正式部署後恢復正式 origin。不要因此將 Token 放到前端。
 
 `enabled` 只控制追蹤、`showStats` 只控制卡片；關閉卡片或追蹤**不會停止 Worker 排程**。要停止資料匯出，移除 `triggers.crons` 的排程並重新部署 Worker。撤銷分享不會刪除已公開的彙總快取；需要下線時停用 Worker。
+
+## 排查 503 與更新狀態
+
+`GET /stats` 只讀 Durable Object 的最新成功快照，不會呼叫 Clarity，也不提供歷史快照查詢。舊版沒有成功快取時回傳 503；新版改為 HTTP 200 搭配 `status: "unavailable"`、`hasData: false`，避免正常空資料狀態被當成服務故障。沒有資料時不補零，也不使用 HTTP 快取。回應中的 `diagnostics` 提供最近結果：
+
+| reason | 意義與處理 |
+| --- | --- |
+| `awaiting_first_update` | 有 Token，但尚無更新結果；確認 Cron 已部署及查看 scheduled invocation。 |
+| `legacy_attempt_unknown` | 有舊版留下的冷卻時間但沒有錯誤歷史；無法判定前次失敗原因，等待後續排程或查看舊日誌。 |
+| `missing_token` | 此 Worker 沒有非空白 `CLARITY_API_TOKEN`；Pages 的同名變數不共用。 |
+| `updating` | 已預留配額並开始更新；若長時間不變，查看該次執行是否被中止。 |
+| `unauthorized` / `forbidden` | 上游 401／403，檢查 Data Export Token 與專案權限。 |
+| `rate_limited` | 上游 429，冷卻 24 小時，檢查其他工具是否共用專案配額。 |
+| `upstream_http_error` | 其他上游 HTTP 失敗，查看 `upstreamStatus`。 |
+| `timeout` / `network_error` | 請求逾時或連線失敗，下次排程再嘗試。 |
+| `invalid_json` / `invalid_schema` | 上游非有效 JSON，或沒有符合預期的單筆 Traffic 彙總；不將缺資料當作零。 |
+| `storage_error` | 寫入快取失敗，檢查 Durable Object 狀態。 |
+| `updated` / `legacy_snapshot` | 最近更新成功，或已有舊版留下的快取。 |
+
+`lastAttemptAt` 是最近真正預留上游呼叫的時間；`lastSuccessAt` 是成功快取時間。`nextEligibleAt` 是冷卻解除時間，**不是保證執行時間**，仍需等後續 Cron。時間均為 UTC ISO 字串。有舊快取時仍回 200，並提供 `stale` 與最近失敗原因。
+
+設定檔已啟用 Observability。部署新版 Worker 後，在 Cloudflare 日誌依事件搜尋 `scheduled_started`、`refresh_started`、`refresh_result`、`refresh_skipped`、`scheduled_finished`／`scheduled_failed`。更新失敗會讓 scheduled handler 報錯，冷卻略過則正常結束；持久化預留仍會阻止重複執行立即消耗配額。日誌不輸出 Token、上游原始回應或個別訪客資料。
+
+```powershell
+pnpm dlx wrangler deploy --config workers/clarity-stats/wrangler.jsonc
+pnpm dlx wrangler tail --config workers/clarity-stats/wrangler.jsonc
+```
+
+只有 GET 的 503 紀錄不足以推斷排程失敗原因。舊版沒有儲存錯誤歷史，升級後也無法還原它；必須查看既有 scheduled 日誌，或等待新版下一次排程留下結果。
 
 ## 驗證範圍
 

@@ -26,6 +26,11 @@ import { clarityConfig } from "../../analytics.config.mjs";
           requests.set(endpoint, cached);
         }
         const data = await cached.data;
+        if (data && typeof data === "object" && "status" in data && data.status === "unavailable") {
+          text.textContent = "尚無可顯示的統計資料";
+          period.textContent = "首次更新成功後顯示最近 72 小時統計";
+          return;
+        }
         if (!data || typeof data !== "object" || !("sessions" in data) || !("botSessions" in data) || !("updatedAt" in data) || !("periodHours" in data) ||
             typeof data.sessions !== "number" || !Number.isSafeInteger(data.sessions) || data.sessions < 0 ||
             typeof data.botSessions !== "number" || !Number.isSafeInteger(data.botSessions) || data.botSessions < 0 ||
