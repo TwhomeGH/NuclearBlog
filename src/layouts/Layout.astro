@@ -1,4 +1,6 @@
 ---
+import UmamiTracker from "../components/UmamiTracker.astro";
+import { clarityConfig } from "../analytics.config.mjs";
 import ReadingFont from "@components/control/ReadingFont.astro";
 import LocalFonts from "@components/LocalFonts.astro";
 import ConfigCarrier from "@components/ConfigCarrier.astro";
@@ -139,6 +141,7 @@ if (siteConfig.font) {
 >
 	<head>
 		<LocalFonts />
+        <UmamiTracker />
         <script is:inline>
           try {
             document.documentElement.dataset.readingFont = localStorage.getItem("reading-font-v1") === "system" ? "system" : "site";
@@ -175,7 +178,7 @@ if (siteConfig.font) {
 		</script>
 
         <!-- Fork 前請更換或移除 Clarity 專案 ID，詳見 docs/ANALYTICS.md。 -->
-        {import.meta.env.PROD && <script is:inline data-clarity-loader>
+        {import.meta.env.PROD && clarityConfig.enabled && <script is:inline data-clarity-loader define:vars={{ clarityProjectId: clarityConfig.projectId }}>
           (() => {
             // 本機預覽也不送出追蹤；Swup 重跑腳本時不重複載入。
             const host = location.hostname;
@@ -187,7 +190,7 @@ if (siteConfig.font) {
               };
               const script = document.createElement("script");
               script.async = true;
-              script.src = "https://www.clarity.ms/tag/ytd2zio6uv";
+              script.src = "https://www.clarity.ms/tag/" + clarityProjectId;
               document.head.appendChild(script);
             };
             if ("requestIdleCallback" in window) window.requestIdleCallback(loadClarity, { timeout: 3000 });

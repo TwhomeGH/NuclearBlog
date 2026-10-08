@@ -1,3 +1,4 @@
+import { analyticsNotice } from "./src/plugins/analytics-notice.mjs";
 import sitemap from "@astrojs/sitemap";
 import svelte, { vitePreprocess } from "@astrojs/svelte";
 import { unified } from "@astrojs/markdown-remark";
@@ -56,6 +57,7 @@ export default defineConfig({
 	},
 
 	integrations: [
+		analyticsNotice(),
 		videoAssets(),
 		umami({
 			shareUrl: false,

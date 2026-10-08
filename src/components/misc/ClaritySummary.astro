@@ -1,0 +1,48 @@
+---
+import { clarityConfig } from "../../analytics.config.mjs";
+---
+{clarityConfig.showStats && clarityConfig.statsEndpoint && <clarity-summary data-endpoint={clarityConfig.statsEndpoint}>
+  <strong>Clarity 全站造訪</strong>
+  <p data-summary aria-live="polite">正在載入統計…</p>
+  <small data-period>最近 72 小時 · 定期更新</small>
+</clarity-summary>}
+<script>
+  const requests = new Map<string, { expires: number; data: Promise<unknown> }>();
+  class ClaritySummary extends HTMLElement {
+    connectedCallback() { void this.load(); }
+    async load() {
+      const text = this.querySelector<HTMLElement>("[data-summary]");
+      const period = this.querySelector<HTMLElement>("[data-period]");
+      const endpoint = this.dataset.endpoint;
+      if (!text || !period || !endpoint) return;
+      try {
+        let cached = requests.get(endpoint);
+        if (!cached || cached.expires < Date.now()) {
+          const data: Promise<unknown> = fetch(endpoint, { credentials: "omit", signal: AbortSignal.timeout(10000) }).then(response => {
+            if (!response.ok) throw new Error("Unavailable");
+            return response.json();
+          });
+          cached = { expires: Date.now() + 300000, data };
+          requests.set(endpoint, cached);
+        }
+        const data = await cached.data;
+        if (!data || typeof data !== "object" || !("sessions" in data) || !("botSessions" in data) || !("updatedAt" in data) || !("periodHours" in data) ||
+            typeof data.sessions !== "number" || !Number.isSafeInteger(data.sessions) || data.sessions < 0 ||
+            typeof data.botSessions !== "number" || !Number.isSafeInteger(data.botSessions) || data.botSessions < 0 ||
+            data.periodHours !== 72 || typeof data.updatedAt !== "string" || !Number.isFinite(Date.parse(data.updatedAt))) throw new Error("Invalid summary");
+        text.textContent = `造訪 ${data.sessions.toLocaleString()} 次 · 機器人造訪 ${data.botSessions.toLocaleString()} 次`;
+        const stale = Date.now() - Date.parse(data.updatedAt) > 12 * 3600000;
+        period.textContent = `截至 ${new Date(data.updatedAt).toLocaleString("zh-TW")} 的最近 72 小時${stale ? " · 暫用上次資料" : ""}`;
+      } catch {
+        text.textContent = "統計暫時無法取得";
+      }
+    }
+  }
+  if (!customElements.get("clarity-summary")) customElements.define("clarity-summary", ClaritySummary);
+</script>
+<style>
+  clarity-summary { display: block; padding: 10px 8px; color: var(--content-meta); font-size: 13px; line-height: 1.7; }
+  strong { color: var(--primary); }
+  p { margin: 4px 0; }
+  small { display: block; font-size: 12px; }
+</style>

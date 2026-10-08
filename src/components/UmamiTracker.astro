@@ -1,0 +1,15 @@
+---
+import { umamiConfig } from "../analytics.config.mjs";
+---
+{import.meta.env.PROD && umamiConfig.enabled && <script is:inline data-umami-loader define:vars={{ umamiSettings: umamiConfig }}>
+  (() => {
+    if (!umamiSettings.domains.includes(location.hostname)) return;
+    if (document.querySelector('script[data-website-id]')) return;
+    const script = document.createElement("script");
+    script.defer = true;
+    script.src = umamiSettings.scriptUrl;
+    script.dataset.websiteId = umamiSettings.websiteId;
+    script.dataset.domains = umamiSettings.domains.join(",");
+    document.head.appendChild(script);
+  })();
+</script>}

@@ -1,0 +1,9 @@
+{
+  "name": "nuclearblog-clarity-stats",
+  "main": "index.mjs",
+  "compatibility_date": "2026-10-01",
+  "vars": { "ALLOWED_ORIGIN": "https://nuclearblog.pages.dev" },
+  "triggers": { "crons": ["17 */6 * * *"] },
+  "durable_objects": { "bindings": [{ "name": "STATS", "class_name": "ClarityStats" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ClarityStats"] }]
+}

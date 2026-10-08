@@ -81,8 +81,16 @@ Markdown 插件集中在 [astro.config.mjs](../astro.config.mjs) 的 `markdown.p
 
 ## Clarity 行為分析
 
-Clarity 使用專案 `ytd2zio6uv`，由 `Layout.astro` 手動載入。只有正式建置會輸出載入程式；`pnpm dev` 不載入，正式產物在 localhost／127.0.0.1／IPv6 loopback 預覽也不載入。部署後需到 Clarity 後台確認資料是否收到，程式建置成功不代表後台已驗證。
+Clarity 的開關與專案 ID 設定於 `src/analytics.config.mjs`，由 `Layout.astro` 手動載入；dev／build 啟動日誌會提示狀態及停用方式。只有正式建置會輸出載入程式；`pnpm dev` 不載入，正式產物在 localhost／127.0.0.1／IPv6 loopback 預覽也不載入。部署後需到 Clarity 後台確認資料是否收到，程式建置成功不代表後台已驗證。
 
 載入程式會避免重複插入 Clarity script。不要再透過 GTM 或 NPM 安裝同一個 Clarity 追蹤器。此處的環境控制只針對 Clarity，現有 GTM 設定另行管理。
 
 Fork 或部署預覽站點前，請閱讀 [流量統計與 fork 前設定](ANALYTICS.md)，確認追蹤 ID 歸屬、停用方式及預覽環境限制。
+
+## Umami 流量追蹤與公開統計
+
+`src/analytics.config.mjs` 的 `umamiConfig.enabled` 控制追蹤；`showStats` 與 `shareUrl` 控制公開統計連結。站點統計卡片與文章資訊列皆連到全站 Umami 分享頁，另開分頁，不讀取數據 API，也不需要 API key。
+
+dev 與正式頁面顯示相同連結，不再使用 `devExample` 或示例數字。dev 不載入 tracker；正式產物只在 `domains` 允許的 hostname 載入。設定變更後重啟 dev，正式環境則重新建置部署。
+
+完整設定與 fork 注意事項見 [Umami 追蹤與公開統計連結](ANALYTICS.md#umami-追蹤與公開統計連結)。

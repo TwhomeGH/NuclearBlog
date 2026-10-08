@@ -4,7 +4,7 @@
 
 ## Fork 部署提醒
 
-部署自己的站點前，請先閱讀 [流量統計與 fork 前設定](ANALYTICS.md)，更換或停用原有 Clarity／GTM 識別碼。
+部署自己的站點前，請先閱讀 [流量統計與 fork 前設定](ANALYTICS.md)，更換或停用原有 Clarity／Umami／GTM 識別碼，並確認 Umami 網域允許清單與前台顯示開關。
 
 ## 新功能與維護入口
 

@@ -1,4 +1,6 @@
 ---
+import ClaritySummary from "../misc/ClaritySummary.astro";
+import TrafficSummary from "../misc/TrafficSummary.astro";
 import { Icon } from "astro-icon/components";
 import { siteConfig } from "../../config";
 import I18nKey from "../../i18n/i18nKey";
@@ -150,6 +152,8 @@ const stats = [
 			))
 		}
 	</div>
+<ClaritySummary />
+<TrafficSummary scope="site" />
 </WidgetLayout>
 </site-stat-values>
 
