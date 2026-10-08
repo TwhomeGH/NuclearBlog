@@ -1,5 +1,5 @@
 import { analyticsNotice } from "./src/plugins/analytics-notice.mjs";
-import sitemap from "@astrojs/sitemap";
+import { seoSitemap } from "./src/plugins/seo-sitemap.mjs";
 import svelte, { vitePreprocess } from "@astrojs/svelte";
 import { unified } from "@astrojs/markdown-remark";
 import { pluginCollapsibleSections } from "@expressive-code/plugin-collapsible-sections";
@@ -136,7 +136,7 @@ export default defineConfig({
 		svelte({
 			preprocess: vitePreprocess(),
 		}),
-		sitemap(),
+		...seoSitemap(),
 	],
 	markdown: {
 		processor: unified({

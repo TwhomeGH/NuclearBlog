@@ -1,4 +1,5 @@
 ---
+import { canonicalUrl } from "../utils/seo";
 import UmamiTracker from "../components/UmamiTracker.astro";
 import { clarityConfig } from "../analytics.config.mjs";
 import ReadingFont from "@components/control/ReadingFont.astro";
@@ -36,6 +37,9 @@ import "../styles/expressive-code.css";
 import "../styles/panel-animations.css";
 
 interface Props {
+	canonical?: string;
+	noindex?: boolean;
+	seoImage?: string;
 	title?: string;
 	banner?: string;
 	description?: string;
@@ -44,7 +48,7 @@ interface Props {
 	postSlug?: string;
 }
 
-let { title, description, lang, setOGTypeArticle, postSlug } =
+let { title, description, lang, setOGTypeArticle, postSlug, canonical, noindex = false, seoImage } =
 	Astro.props;
 
 // apply a class to the body element to decide the height of the banner, only used for initial page load
@@ -75,8 +79,10 @@ if (title) {
 		: siteConfig.title;
 }
 
-let ogImageUrl: string | undefined;
-if (siteConfig.generateOgImages && postSlug) {
+const canonicalHref = canonicalUrl(canonical || Astro.url.pathname, siteConfig.siteURL);
+const metaDescription = description || (title ? pageTitle : siteConfig.subtitle || siteConfig.title);
+let ogImageUrl: string | undefined = seoImage;
+if (!noindex && !ogImageUrl && siteConfig.generateOgImages && postSlug) {
 	ogImageUrl = new URL(`/og/${postSlug}.png`, Astro.site).toString();
 }
 
@@ -199,8 +205,10 @@ if (siteConfig.font) {
         </script>}
 
 		<title>{pageTitle}</title>
+        <link rel="canonical" href={canonicalHref} />
+        {noindex && <meta name="robots" content="noindex, follow" />}
 		<meta charset="UTF-8" />
-		<meta name="description" content={description || pageTitle} />
+		<meta name="description" content={metaDescription} />
 		{
 			siteConfig.keywords && siteConfig.keywords.length > 0 && (
 				<meta
@@ -211,9 +219,9 @@ if (siteConfig.font) {
 		}
 		<meta name="author" content={profileConfig.name} />
 		<meta property="og:site_name" content={siteConfig.title} />
-		<meta property="og:url" content={Astro.url} />
+		<meta property="og:url" content={canonicalHref} />
 		<meta property="og:title" content={pageTitle} />
-		<meta property="og:description" content={description || pageTitle} />
+		<meta property="og:description" content={metaDescription} />
 		{ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
 		{
 			setOGTypeArticle ? (
@@ -222,10 +230,11 @@ if (siteConfig.font) {
 				<meta property="og:type" content="website" />
 			)
 		}
+		{ogImageUrl && <meta name="twitter:image" content={ogImageUrl} />}
 		<meta name="twitter:card" content="summary_large_image" />
-		<meta property="twitter:url" content={Astro.url} />
+		<meta property="twitter:url" content={canonicalHref} />
 		<meta name="twitter:title" content={pageTitle} />
-		<meta name="twitter:description" content={description || pageTitle} />
+		<meta name="twitter:description" content={metaDescription} />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
 		{

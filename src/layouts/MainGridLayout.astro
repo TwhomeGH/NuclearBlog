@@ -30,6 +30,9 @@ const isFloatTOC = tocMode === "float";
 const isSidebarTOC = tocMode === "sidebar";
 
 interface Props {
+	canonical?: string;
+	noindex?: boolean;
+	seoImage?: string;
 	title?: string;
 	banner?: string;
 	description?: string;
@@ -98,6 +101,7 @@ const getBannerImages = async () => {
 const bannerImages = await getBannerImages();
 
 const {
+	canonical, noindex, seoImage,
 	title,
 	banner,
 	description,
@@ -242,7 +246,7 @@ const transparentClass = shouldEnableTransparency
 	: "";
 ---
 
-<Layout title={title} banner={banner} description={description} lang={lang} setOGTypeArticle={setOGTypeArticle} postSlug={postSlug}>
+<Layout canonical={canonical} noindex={noindex} seoImage={seoImage} title={title} banner={banner} description={description} lang={lang} setOGTypeArticle={setOGTypeArticle} postSlug={postSlug}>
 
 <script type="module" is:inline define:vars={{navbarTransparentMode: siteConfig.banner?.navbar?.transparentMode || "semi", defaultWallpaperMode: siteConfig.wallpaperMode.defaultMode, defaultPostListLayout: siteConfig.postListLayout?.defaultMode || "list", BANNER_HEIGHT, pageScaling: siteConfig.pageScaling}}>
 

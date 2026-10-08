@@ -8,6 +8,7 @@
 
 ## 新功能與維護入口
 
+- [SEO 與搜尋收錄](SEO.md)：canonical、文章摘要、分享圖片、sitemap 與搜尋引擎驗證。
 - [本機開發與更新排查](DEVELOPMENT.md)：Node、Astro 7、區網測試與存檔未更新。
 - [前端組件與版面維護](FRONTEND_MAINTENANCE.md)：版面分層、組件入口與提交界線。
 - [浮動目錄與音樂播放器](READING_TOOLS.md)：收合、拖曳、位置保存及設定。
