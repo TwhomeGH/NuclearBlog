@@ -297,7 +297,7 @@ class TableOfContents extends HTMLElement {
         // 重新生成TOC HTML
         const minDepth = Math.min(...headings.map(h => h.depth));
         // 获取配置信息
-        const siteConfig = (window as any).siteConfig || {};
+        const siteConfig = window.siteConfig || {};
         const maxLevel = siteConfig.toc?.depth || 3;
         const useJapaneseBadge = siteConfig.toc?.useJapaneseBadge || false;
         

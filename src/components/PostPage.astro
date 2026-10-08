@@ -120,7 +120,7 @@ const initialLayoutClass = defaultLayout === "grid" ? "grid-mode" : "list-mode";
 	}
 
 	// 监听布局变化
-	window.addEventListener("layoutChange", (event: any) => {
+	window.addEventListener("layoutChange", (event) => {
 		if (event.detail?.layout) updatePostListLayout(event.detail.layout);
 	});
 
@@ -146,12 +146,12 @@ const initialLayoutClass = defaultLayout === "grid" ? "grid-mode" : "list-mode";
 
 	// Swup 集成
 	function setupSwupListeners() {
-		if ((window as any)._postListSwupListenerAttached) return;
+		if (window._postListSwupListenerAttached) return;
 
 		function trySetupSwup() {
-			if (typeof window !== "undefined" && (window as any).swup) {
-				(window as any).swup.hooks.on("content:replace", initLayout);
-				(window as any)._postListSwupListenerAttached = true;
+			if (typeof window !== "undefined" && window.swup) {
+				window.swup.hooks.on("content:replace", initLayout);
+				window._postListSwupListenerAttached = true;
 				return true;
 			}
 			return false;

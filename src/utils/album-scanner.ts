@@ -1,3 +1,4 @@
+import { albumInfoSchema, externalPhotoSchema } from "./album-schema";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { AlbumGroup, Photo, Video } from "../types/album";
@@ -44,9 +45,9 @@ async function processAlbumFolder(
 
 	// 读取相册信息
 	const infoContent = fs.readFileSync(infoPath, "utf-8");
-	let info: Record<string, any>;
+	let info: ReturnType<typeof albumInfoSchema.parse>;
 	try {
-		info = JSON.parse(infoContent);
+		info = albumInfoSchema.parse(JSON.parse(infoContent));
 	} catch (e) {
 		console.error(`相册 ${folderName} 的 info.json 格式错误:`, e);
 		return null;
@@ -54,7 +55,7 @@ async function processAlbumFolder(
 
 	// 检查是否为外链模式
 	const isExternalMode = info.mode === "external";
-	let photos: Photo[] = [];
+	let photos: Photo[];
 	let videos: Video[] = [];
 	let cover: string;
 
@@ -180,19 +181,21 @@ function scanMedia(
 }
 
 function processExternalPhotos(
-	externalPhotos: any[],
+	externalPhotos: unknown[],
 	albumId: string,
 ): Photo[] {
 	const photos: Photo[] = [];
 
-	externalPhotos.forEach((photo, index) => {
-		if (!photo.src) {
+	externalPhotos.forEach((input, index) => {
+		const result = externalPhotoSchema.safeParse(input);
+		if (!result.success) {
 			console.warn(
-				`相册 ${albumId} 的第 ${index + 1} 张照片缺少 src 字段`,
+				`相册 ${albumId} 的第 ${index + 1} 张照片格式不正确`,
 			);
 			return;
 		}
 
+		const photo = result.data;
 		photos.push({
 			id: photo.id || `${albumId}-external-photo-${index}`,
 			src: photo.src,

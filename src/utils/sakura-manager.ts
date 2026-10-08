@@ -85,7 +85,7 @@ class Sakura {
 	}
 
 	private resetPosition() {
-		this.r = getRandom("fnr", this.config);
+		this.r = getRandom("r", this.config);
 		if (Math.random() > 0.4) {
 			this.x = getRandom("x", this.config);
 			this.y = 0;
@@ -136,8 +136,11 @@ class SakuraList {
 }
 
 // 获取随机值的函数
-function getRandom(option: string, config: SakuraConfig): any {
-	let ret: any;
+function getRandom(option: "x" | "y" | "s" | "r" | "a", config: SakuraConfig): number;
+function getRandom(option: "fnx" | "fny", config: SakuraConfig): (x: number, y: number) => number;
+function getRandom(option: "fnr" | "fna", config: SakuraConfig): (value: number) => number;
+function getRandom(option: string, config: SakuraConfig) {
+	let ret: number | ((x: number, y: number) => number);
 	let random: number;
 
 	switch (option) {
@@ -180,6 +183,7 @@ function getRandom(option: string, config: SakuraConfig): any {
 		case "fna":
 			ret = (alpha: number) => alpha - config.speed.fadeSpeed * 0.01;
 			break;
+		default: throw new Error(`Unknown sakura option: ${option}`);
 	}
 	return ret;
 }

@@ -35,8 +35,8 @@ const setPanelVisibility = async (show: boolean): Promise<void> => {
 
 const generateTOC = () => {
 	// 获取配置
-	useJapaneseBadge = (window as any).siteConfig?.toc?.useJapaneseBadge || false;
-	tocDepth = (window as any).siteConfig?.toc?.depth || 3;
+	useJapaneseBadge = window.siteConfig?.toc?.useJapaneseBadge || false;
+	tocDepth = window.siteConfig?.toc?.depth || 3;
 
 	const headings = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
 	const items: Array<{
@@ -211,30 +211,24 @@ const setupIntersectionObserver = () => {
 };
 
 let swupListenersRegistered = false;
+const refreshAfterNavigation = () => { setTimeout(init, 200); };
 
 const setupSwupListeners = () => {
 	if (
 		typeof window !== "undefined" &&
-		(window as any).swup &&
+		window.swup &&
 		!swupListenersRegistered
 	) {
-		const swup = (window as any).swup;
+		const swup = window.swup;
 
 		// 只监听页面视图事件，避免重复触发
-		swup.hooks.on("page:view", () => {
-			// 延迟执行，确保页面已完全加载
-			setTimeout(() => {
-				init();
-			}, 200);
-		});
+		swup.hooks.on("page:view", refreshAfterNavigation);
 
 		swupListenersRegistered = true;
 		console.log("MobileTOC Swup listener registered");
 	} else if (!swupListenersRegistered) {
 		// 降级处理：监听普通页面切换事件
-		window.addEventListener("popstate", () => {
-			setTimeout(init, 200);
-		});
+		window.addEventListener("popstate", refreshAfterNavigation);
 		swupListenersRegistered = true;
 		console.log("MobileTOC fallback listener registered");
 	}
@@ -243,12 +237,12 @@ const setupSwupListeners = () => {
 const checkSwupAvailability = () => {
 	if (typeof window !== "undefined") {
 		// 检查Swup是否已加载
-		swupReady = !!(window as any).swup;
+		swupReady = !!window.swup;
 
 		// 如果Swup还未加载，监听其加载事件
 		if (!swupReady) {
 			const checkSwup = () => {
-				if ((window as any).swup) {
+				if (window.swup) {
 					swupReady = true;
 					document.removeEventListener("swup:enable", checkSwup);
 					// Swup加载完成后设置监听器
@@ -261,7 +255,7 @@ const checkSwupAvailability = () => {
 
 			// 设置超时检查
 			setTimeout(() => {
-				if ((window as any).swup) {
+				if (window.swup) {
 					swupReady = true;
 					document.removeEventListener("swup:enable", checkSwup);
 					// Swup加载完成后设置监听器
@@ -301,20 +295,20 @@ onMount(() => {
 		window.removeEventListener("scroll", updateActiveHeading);
 
 		// 清理Swup事件监听器
-		if (typeof window !== "undefined" && (window as any).swup) {
-			const swup = (window as any).swup;
-			swup.hooks.off("page:view");
+		if (typeof window !== "undefined" && window.swup) {
+			const swup = window.swup;
+			swup.hooks.off("page:view", refreshAfterNavigation);
 		}
 
 		// 清理popstate事件监听器
-		window.removeEventListener("popstate", init);
+		window.removeEventListener("popstate", refreshAfterNavigation);
 		swupListenersRegistered = false;
 	};
 });
 
 // 导出初始化函数供外部调用
 if (typeof window !== "undefined") {
-	(window as any).mobileTOCInit = init;
+	window.mobileTOCInit = init;
 }
 </script>
 

@@ -58,7 +58,9 @@ export function clearPostIdMap(): void {
  * @param post 文章数据
  * @returns 生成的 slug（不包含 /posts/ 前缀）
  */
-export function generatePermalinkSlug(post: CollectionEntry<"posts">): string {
+export type PermalinkPost = { id: string; data: Pick<CollectionEntry<"posts">["data"], "published"> & Partial<Pick<CollectionEntry<"posts">["data"], "alias" | "permalink" | "category">> };
+
+export function generatePermalinkSlug(post: PermalinkPost): string {
 	// 如果文章有自定义 permalink，优先使用（不在 /posts/ 下）
 	if (post.data.permalink) {
 		// 移除开头和结尾的斜杠

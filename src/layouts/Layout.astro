@@ -42,7 +42,7 @@ interface Props {
 	postSlug?: string;
 }
 
-let { title, banner, description, lang, setOGTypeArticle, postSlug } =
+let { title, description, lang, setOGTypeArticle, postSlug } =
 	Astro.props;
 
 // apply a class to the body element to decide the height of the banner, only used for initial page load
@@ -61,42 +61,6 @@ const navbarTransparentMode =
 // 判断是否应该显示顶部高光效果（只在full和semifull模式下显示）
 const shouldShowTopHighlight =
 	navbarTransparentMode === "full" || navbarTransparentMode === "semifull";
-
-// 获取默认banner图片的辅助函数
-const getDefaultBanner = (): string => {
-	const src = siteConfig.banner.src;
-	if (typeof src === "string") {
-		return src;
-	}
-	if (Array.isArray(src)) {
-		return src[0] || "";
-	}
-	if (src && typeof src === "object") {
-		// 优先使用desktop，如果没有则使用mobile
-		const desktopSrc = src.desktop;
-		const mobileSrc = src.mobile;
-		if (typeof desktopSrc === "string") {
-			return desktopSrc;
-		}
-		if (Array.isArray(desktopSrc) && desktopSrc.length > 0) {
-			return desktopSrc[0];
-		}
-		if (typeof mobileSrc === "string") {
-			return mobileSrc;
-		}
-		if (Array.isArray(mobileSrc) && mobileSrc.length > 0) {
-			return mobileSrc[0];
-		}
-	}
-	return "";
-};
-
-if (!banner || typeof banner !== "string" || banner.trim() === "") {
-	banner = getDefaultBanner();
-}
-
-// TODO don't use post cover as banner for now
-banner = getDefaultBanner();
 
 const enableBanner = !!siteConfig.banner.src;
 
@@ -218,8 +182,8 @@ if (siteConfig.font) {
             if (host === "localhost" || host.endsWith(".localhost") || host === "127.0.0.1" || host === "[::1]") return;
             const loadClarity = () => {
               if (document.querySelector('script[src^="https://www.clarity.ms/tag/"]')) return;
-              window.clarity = window.clarity || function () {
-                (window.clarity.q = window.clarity.q || []).push(arguments);
+              window.clarity = window.clarity || function (...args) {
+                (window.clarity.q = window.clarity.q || []).push(args);
               };
               const script = document.createElement("script");
               script.async = true;
@@ -434,7 +398,6 @@ if (siteConfig.font) {
 	define:vars={{
 		bannerOffset,
 		"banner-height-home": `${BANNER_HEIGHT_HOME}vh`,
-		"banner-height": `${BANNER_HEIGHT}vh`,
 	}}
 >
 	@tailwind components;
@@ -509,7 +472,7 @@ if (siteConfig.font) {
 	import { initSakura } from "../utils/sakura-manager";
 
 	// const setTimeout = window.setTimeout;
-	const setTimeout = (callback: any, delay: any) =>
+	const setTimeout = (callback: () => void, delay: number) =>
 		window.setTimeout(callback, delay);
 
 	/* Preload fonts */
@@ -562,7 +525,7 @@ function disableAnimation() {
 		try {
 			const { panelManager } = await import("../utils/panel-manager.js");
 
-			function setClickOutsideToClose(panel: string, ignores: string[]) {
+			function setClickOutsideToClose(panel: import("../utils/panel-manager").PanelId, ignores: string[]) {
 				document.addEventListener("click", async (event) => {
 					// let _panelDom = document.getElementById(panel);
 					const tDom = event.target;
@@ -573,7 +536,7 @@ function disableAnimation() {
 							return;
 						}
 					}
-					await panelManager.closePanel(panel as any);
+					await panelManager.closePanel(panel);
 				});
 			}
 
@@ -711,7 +674,7 @@ function disableAnimation() {
 		if (validItems.length > 1 && siteConfig.banner.carousel?.enable) {
 			let currentIndex = 0;
 			const interval = siteConfig.banner.carousel?.interval || 6;
-			let carouselInterval: any;
+			let carouselInterval: ReturnType<typeof window.setInterval> | undefined;
 			let isPaused = false;
 
 			// 移动端触摸手势支持
@@ -849,11 +812,11 @@ function disableAnimation() {
 	}
 
 	function setupSakura() {
-		const sakuraConfig = (widgetConfigs as any)?.sakura;
+		const sakuraConfig = widgetConfigs.sakura;
 		if (!sakuraConfig || !sakuraConfig.enable) return;
-		if ((window as any).sakuraInitialized) return;
+		if (window.sakuraInitialized) return;
 		initSakura(sakuraConfig);
-		(window as any).sakuraInitialized = true;
+		window.sakuraInitialized = true;
 	}
 
 	if (document.readyState === "loading") {
@@ -863,7 +826,7 @@ function disableAnimation() {
 	}
 
 	let fancyboxSelectors: string[] = [];
-	let Fancybox: any;
+	let Fancybox: typeof import("@fancyapps/ui").Fancybox | undefined;
 
 	// 数学公式按需加载
 	function checkKatex() {
@@ -896,41 +859,23 @@ function disableAnimation() {
 			return; // 已经初始化，直接返回
 		}
 
-		const commonConfig = {
-			Thumbs: { autoStart: true, showOnStart: "yes" },
-			Toolbar: {
-				display: {
-					left: ["infobar"],
-					middle: [
-						"zoomIn",
-						"zoomOut",
-						"toggle1to1",
-						"rotateCCW",
-						"rotateCW",
-						"flipX",
-						"flipY",
-					],
-					right: ["slideshow", "thumbs", "close"],
-				},
+		const commonConfig: Partial<import("@fancyapps/ui").FancyboxOptions> = {
+			Carousel: {
+				infinite: true,
+				Thumbs: { showOnStart: true },
+				Toolbar: { display: {
+					left: ["counter"],
+					middle: ["zoomIn", "zoomOut", "toggle1to1", "rotateCCW", "rotateCW", "flipX", "flipY"],
+					right: ["autoplay", "thumbs", "close"],
+				} },
 			},
-			animated: true,
+			fadeEffect: true,
 			dragToClose: true,
 			keyboard: {
-				Escape: "close",
-				Delete: "close",
-				Backspace: "close",
-				PageUp: "next",
-				PageDown: "prev",
-				ArrowUp: "next",
-				ArrowDown: "prev",
-				ArrowRight: "next",
-				ArrowLeft: "prev",
+				Escape: "close", Delete: "close", Backspace: "close",
+				PageUp: "next", PageDown: "prev", ArrowUp: "next",
+				ArrowDown: "prev", ArrowRight: "next", ArrowLeft: "prev",
 			},
-			fitToView: true,
-			preload: 3,
-			infinite: true,
-			Panzoom: { maxScale: 3, minScale: 1 },
-			caption: false,
 		};
 
 		// 绑定相册/文章图片
@@ -938,18 +883,14 @@ function disableAnimation() {
 			...commonConfig,
 			groupAll: true,
 			Carousel: {
+				...commonConfig.Carousel,
 				transition: "slide",
-				preload: 2,
 			},
 		});
 		fancyboxSelectors.push(albumImagesSelector);
 
-		Fancybox.bind(albumLinksSelector, {
-			...commonConfig,
-			source: (el: any) => {
-				return el.getAttribute("data-src") || el.getAttribute("href");
-			},
-		});
+		// Fancybox 直接從 data-src 或 href 取得圖片。
+		Fancybox.bind(albumLinksSelector, commonConfig);
 		fancyboxSelectors.push(albumLinksSelector);
 
 		// 绑定单独的 fancybox 图片
@@ -961,7 +902,7 @@ function disableAnimation() {
 	function cleanupFancybox() {
 		if (!Fancybox) return; // 如果从未加载过，无需清理
 		fancyboxSelectors.forEach((selector) => {
-			Fancybox.unbind(selector);
+			Fancybox?.unbind(selector);
 		});
 		fancyboxSelectors = [];
 	}
@@ -969,7 +910,7 @@ function disableAnimation() {
 	const setup = () => {
 		// TODO: temp solution to change the height of the banner
 		/*
-    window.swup.hooks.on('animation:out:start', () => {
+    window.swup?.hooks.on('animation:out:start', () => {
         const path = window.location.pathname
         const body = document.querySelector('body')
         if (path[path.length - 1] === '/' && !body.classList.contains('is-home')) {
@@ -979,7 +920,7 @@ function disableAnimation() {
         }
     })
 */
-		window.swup.hooks.on("link:click", () => {
+		window.swup?.hooks.on("link:click", () => {
 			// Remove the delay for the first time page load
 			document.documentElement.style.setProperty(
 				"--content-delay",
@@ -999,7 +940,7 @@ function disableAnimation() {
 			}
 		});
 
-		window.swup.hooks.on("content:replace", () => {
+		window.swup?.hooks.on("content:replace", () => {
 			// 初始化新页面的图片、公式、滚动条和TOC
 			initFancybox();
 			checkKatex();
@@ -1014,17 +955,17 @@ function disableAnimation() {
 				const tocElement = document.querySelector("table-of-contents");
 				if (
 					tocElement &&
-					typeof (tocElement as any).init === "function"
+					typeof tocElement.init === "function"
 				) {
 					setTimeout(() => {
-						(tocElement as any).init();
+						tocElement.init?.();
 					}, 100);
 				}
 
 				// 重新初始化移动端 TOC 组件
-				if (typeof (window as any).mobileTOCInit === "function") {
+				if (typeof window.mobileTOCInit === "function") {
 					setTimeout(() => {
-						(window as any).mobileTOCInit();
+						window.mobileTOCInit?.();
 					}, 100);
 				}
 			}
@@ -1038,16 +979,16 @@ function disableAnimation() {
 				if (transparentMode === "semifull") {
 					// 重新调用初始化函数来重新绑定滚动事件
 					if (
-						typeof (window as any).initSemifullScrollDetection ===
+						typeof window.initSemifullScrollDetection ===
 						"function"
 					) {
-						(window as any).initSemifullScrollDetection();
+						window.initSemifullScrollDetection();
 					}
 				}
 			}
 		});
 
-		window.swup.hooks.on(
+		window.swup?.hooks.on(
 			"visit:start",
 			(visit: { to: { url: string } }) => {
 				// 清理上一页的 Fancybox
@@ -1087,10 +1028,10 @@ function disableAnimation() {
 					if (transparentMode === "semifull") {
 						// 重新调用初始化函数来重新绑定滚动事件
 						if (
-							typeof (window as any)
+							typeof window
 								.initSemifullScrollDetection === "function"
 						) {
-							(window as any).initSemifullScrollDetection();
+							window.initSemifullScrollDetection();
 						}
 					}
 				}
@@ -1141,7 +1082,7 @@ function disableAnimation() {
 			},
 		);
 
-		window.swup.hooks.on("page:view", () => {
+		window.swup?.hooks.on("page:view", () => {
 			// hide the temp high element when the transition is done
 			const heightExtend = document.getElementById("page-height-extend");
 			if (heightExtend) {
@@ -1208,7 +1149,7 @@ function disableAnimation() {
 			}, 300);
 		});
 
-		window.swup.hooks.on("visit:end", (_visit: { to: { url: string } }) => {
+		window.swup?.hooks.on("visit:end", (_visit: { to: { url: string } }) => {
 			setTimeout(() => {
 				const heightExtend =
 					document.getElementById("page-height-extend");
@@ -1248,18 +1189,15 @@ function disableAnimation() {
 	const navbar = document.getElementById("navbar-wrapper");
 
 	// 节流函数
-	function throttle(func: Function, limit: number) {
-		let inThrottle: boolean;
-		return function (this: any) {
-			const args = arguments;
-			const context = this;
-			if (!inThrottle) {
-				func.apply(context, args);
-				inThrottle = true;
-				setTimeout(() => (inThrottle = false), limit);
-			}
-		};
-	}
+	function throttle(func: () => void, limit: number) {
+        let inThrottle = false;
+        return () => {
+            if (inThrottle) return;
+            func();
+            inThrottle = true;
+            setTimeout(() => { inThrottle = false; }, limit);
+        };
+    }
 
 	function scrollFunction() {
 		const scrollTop = document.documentElement.scrollTop;

@@ -1,4 +1,5 @@
-import type { ECharts, EChartsOption } from "echarts";
+import { parseChartOption, isRecord, getLegendSelection } from "../utils/echarts-option";
+import type { ECharts, EChartsOption, ECElementEvent } from "echarts";
 
 // 只有頁面包含圖表時才下載 ECharts；由本站提供，不依賴外部 CDN。
 let library: Promise<typeof import("echarts")> | undefined;
@@ -25,10 +26,7 @@ class InteractiveChart extends HTMLElement {
     const generation = ++this.generation;
     const current = () => this.isConnected && generation === this.generation;
     try {
-      const option = JSON.parse(this.getAttribute("data-echarts") || "null");
-      if (!option || typeof option !== "object" || Array.isArray(option) || !Array.isArray(option.series) || !option.series.length) {
-        throw new Error("請提供 JSON 物件及非空的 series 陣列。");
-      }
+      const option = parseChartOption(this.getAttribute("data-echarts") || "null");
       const echarts = await loadLibrary();
       if (!current()) return;
       this.replaceChildren();
@@ -39,19 +37,19 @@ class InteractiveChart extends HTMLElement {
       stage.className = "echarts-stage";
       stage.tabIndex = 0;
       stage.setAttribute("role", "region");
-      const title = typeof option.title?.text === "string" ? option.title.text : "互動圖表";
+      const title = !Array.isArray(option.title) && typeof option.title?.text === "string" ? option.title.text : "互動圖表";
       stage.setAttribute("aria-label", title);
       const selection = document.createElement("p");
       selection.className = "echarts-selection";
       selection.setAttribute("aria-live", "polite");
       selection.textContent = "尚未選取資料點";
       this.append(hint, stage, selection);
-      const categories = Array.isArray(option.xAxis?.data) ? option.xAxis.data : [];
+      const categories = !Array.isArray(option.xAxis) && option.xAxis && "data" in option.xAxis && Array.isArray(option.xAxis.data) ? option.xAxis.data : [];
       let index = -1;
       const describe = (i: number) => {
-        const values = option.series.map((series: any) => {
+        const values = option.series.map((series) => {
           const item = series.data?.[i];
-          const value = item && typeof item === "object" && !Array.isArray(item) ? item.value : item;
+          const value = isRecord(item) ? item.value : item;
           return `${series.name || "資料"}：${Array.isArray(value) ? value.join(" / ") : value ?? "無資料"}`;
         });
         selection.textContent = `${categories[i] ?? i + 1} — ${values.join("；")}`;
@@ -60,19 +58,19 @@ class InteractiveChart extends HTMLElement {
         grid: { left: 16, right: 24, top: 100, bottom: 36, containLabel: true },
         legend: { top: 42, type: "scroll" },
         ...option,
-        tooltip: { trigger: "axis", triggerOn: "mousemove|click", confine: true, ...option.tooltip, renderMode: "richText" },
+        tooltip: { trigger: "axis", triggerOn: "mousemove|click|mousewheel", confine: true, ...option.tooltip, renderMode: "richText" },
         aria: { enabled: true },
         animation: !matchMedia("(prefers-reduced-motion: reduce)").matches,
-        series: option.series.map((series: any) => ({ showSymbol: true, symbolSize: 10, ...series })),
+        series: option.series.map((series) => ({ showSymbol: true, symbolSize: 10, ...series })),
       };
       // 以實際文字尺寸保留標題、副標題、圖例和座標名稱的間距。
       const layout = (): EChartsOption => {
         if (Array.isArray(option.title) || Array.isArray(option.legend) || Array.isArray(option.grid)) return {};
         const width = Math.max(100, stage.clientWidth - 24);
         const rawTitle = option.title || {};
-        const textStyle = { fontSize: stage.clientWidth < 480 ? 16 : 18, lineHeight: 24, width, overflow: "break", ...rawTitle.textStyle };
-        const subtextStyle = { fontSize: 12, lineHeight: 18, width, overflow: "break", ...rawTitle.subtextStyle };
-        const height = (text: string, style: any) => text ? new echarts.graphic.Text({ style: { text, ...style } }).getBoundingRect().height : 0;
+        const textStyle = { fontSize: stage.clientWidth < 480 ? 16 : 18, lineHeight: 24, width, overflow: "break" as const, ...rawTitle.textStyle };
+        const subtextStyle = { fontSize: 12, lineHeight: 18, width, overflow: "break" as const, ...rawTitle.subtextStyle };
+        const height = (text: string | undefined, style: NonNullable<ConstructorParameters<typeof echarts.graphic.Text>[0]>["style"]) => text ? new echarts.graphic.Text({ style: { text, ...style } }).getBoundingRect().height : 0;
         const titleTop = typeof rawTitle.top === "number" ? rawTitle.top : 8;
         const itemGap = rawTitle.itemGap ?? 8;
         const titleHeight = rawTitle.show === false ? 0 : height(rawTitle.text, textStyle) + (rawTitle.subtext ? itemGap + height(rawTitle.subtext, subtextStyle) : 0);
@@ -85,17 +83,17 @@ class InteractiveChart extends HTMLElement {
           title: { top: 8, itemGap: 8, ...rawTitle, textStyle, subtextStyle },
           legend: { type: "scroll", left: "center", ...rawLegend, top: typeof rawLegend.top === "string" ? rawLegend.top : legendTop },
           grid: { left: 16, right: 24, bottom: 36, containLabel: true, ...option.grid, top: typeof option.grid?.top === "string" ? option.grid.top : gridTop },
-        } as EChartsOption;
+        };
       };
       let dark = document.documentElement.classList.contains("dark");
       const draw = () => {
-        const selected = (this.chart?.getOption().legend as any[])?.[0]?.selected;
+        const selected = getLegendSelection(this.chart?.getOption().legend);
         this.chart?.dispose();
         const spacing = layout();
         this.chart = echarts.init(stage, dark ? "dark" : undefined, { renderer: "svg" });
         this.chart.setOption({ ...base, ...spacing, backgroundColor: "transparent" });
         if (selected) this.chart.setOption({ legend: { selected } });
-        this.chart.on("click", (params: any) => {
+        this.chart.on("click", (params: ECElementEvent) => {
           if (params.componentType !== "series") return;
           index = params.dataIndex;
           describe(index);

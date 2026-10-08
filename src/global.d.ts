@@ -1,6 +1,10 @@
-export {};
+import type { Swup } from "@swup/astro/client";
+import type { SiteConfig } from "./types/config";
 
 declare global {
+	interface WindowEventMap {
+		layoutChange: CustomEvent<{ layout: "list" | "grid" }>;
+	}
 	interface HTMLElementTagNameMap {
 		"table-of-contents": HTMLElement & {
 			init?: () => void;
@@ -8,8 +12,10 @@ declare global {
 	}
 
 	interface Window {
-		// Define swup type directly since @swup/astro doesn't export AstroIntegration
-		swup: any;
+		swup?: Swup;
+		_postListSwupListenerAttached?: boolean;
+		sakuraInitialized?: boolean;
+		panelManager?: typeof import("./utils/panel-manager").panelManager;
 		closeAnnouncement: () => void;
 		pagefind: {
 			search: (query: string) => Promise<{
@@ -28,7 +34,7 @@ declare global {
 			onLoad: (callback: () => void) => void;
 			isLoaded: boolean;
 		};
-		siteConfig: any;
+		siteConfig?: Pick<Partial<SiteConfig>, "toc">;
 	}
 }
 

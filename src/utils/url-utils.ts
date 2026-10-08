@@ -1,4 +1,4 @@
-import type { CollectionEntry } from "astro:content";
+import type { PermalinkPost } from "./permalink-utils";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import { permalinkConfig } from "../config";
@@ -35,12 +35,7 @@ export function getPostUrlByAlias(alias: string): string {
 	return url(`/posts/${cleanAlias}/`);
 }
 
-export function getPostUrl(post: CollectionEntry<"posts">): string;
-export function getPostUrl(post: {
-	id: string;
-	data: { alias?: string; permalink?: string };
-}): string;
-export function getPostUrl(post: any): string {
+export function getPostUrl(post: PermalinkPost): string {
 	// 如果文章有自定义 permalink，优先使用（在根目录下）
 	if (post.data.permalink) {
 		const slug = post.data.permalink
