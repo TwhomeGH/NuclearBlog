@@ -5,6 +5,15 @@ function log(event, fields = {}) {
   console.log(JSON.stringify({ service: "clarity-stats", event, ...fields }));
 }
 
+export function safeErrorDetails(error, token) {
+  const redact = value => String(value || "")
+    .split(token || "\u0000").join("[redacted]")
+    .replace(/Bearer\s+\S+/gi, "Bearer [redacted]")
+    .replace(/[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]+/g, "[redacted]")
+    .slice(0, 300);
+  return { errorName: redact(error?.name), errorMessage: redact(error?.message), causeCode: redact(error?.cause?.code) };
+}
+
 function count(value) {
   if (typeof value !== "number" && typeof value !== "string") throw new Error("Invalid count");
   if (typeof value === "string" && !/^\d+$/.test(value)) throw new Error("Invalid count");
@@ -39,8 +48,12 @@ export class ClarityStats {
   async fetch(request) {
     if (request.method === "POST") {
       // 此路徑只由 scheduled 透過 DO binding 呼叫，外部 Worker 不轉送 POST。
-      if (!this.env.CLARITY_API_TOKEN?.trim()) {
+      const token = this.env.CLARITY_API_TOKEN?.trim();
+      if (!token) {
         return Response.json(await this.outcome("missing_token"), { status: 503 });
+      }
+      if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token)) {
+        return Response.json(await this.outcome("invalid_token_format"), { status: 503 });
       }
       const now = Date.now();
       const reserved = await this.state.blockConcurrencyWhile(async () => {
@@ -53,19 +66,23 @@ export class ClarityStats {
         return true;
       });
       if (!reserved) {
-        log("refresh_skipped", { reason: "cooldown", nextEligibleAt: new Date(await this.state.storage.get("nextAttempt")).toISOString() });
-        return Response.json({ reason: "cooldown" }, { status: 202 });
+        const result = { reason: "cooldown", message: "冷卻中，略過更新；未呼叫 Clarity API。", nextEligibleAt: new Date(await this.state.storage.get("nextAttempt")).toISOString() };
+        log("refresh_skipped", result);
+        return Response.json(result, { status: 202 });
       }
       log("refresh_started", { periodHours: 72, attemptAt: new Date(now).toISOString() });
       let phase = "network";
       let upstreamStatus;
       try {
         const response = await fetch("https://www.clarity.ms/export-data/api/v1/project-live-insights?numOfDays=3", {
-          headers: { Authorization: `Bearer ${this.env.CLARITY_API_TOKEN}` },
+          headers: { Authorization: `Bearer ${token}` },
           signal: AbortSignal.timeout(15000),
-          redirect: "error",
+          redirect: "manual",
         });
         upstreamStatus = response.status;
+        if (response.status >= 300 && response.status < 400) {
+          return Response.json(await this.outcome("upstream_redirect", { upstreamStatus }), { status: 502 });
+        }
         if (response.status === 429) {
           await this.state.storage.put("nextAttempt", Date.now() + 24 * HOUR);
           return Response.json(await this.outcome("rate_limited", { upstreamStatus }), { status: 429 });
@@ -80,8 +97,15 @@ export class ClarityStats {
         const snapshot = summarize(payload, now);
         phase = "storage";
         await this.state.storage.put("snapshot", snapshot);
-        return Response.json(await this.outcome("updated", { upstreamStatus, durationMs: Date.now() - now }));
+        return Response.json(await this.outcome("updated", {
+          message: `已儲存最近 ${snapshot.periodHours} 小時統計：${snapshot.sessions} 次造訪、${snapshot.botSessions} 次機器人造訪（期間總數，非本次新增）。`,
+          ...snapshot,
+          upstreamStatus,
+          durationMs: Date.now() - now,
+          nextEligibleAt: new Date(now + 6 * HOUR).toISOString(),
+        }));
       } catch (error) {
+        log("refresh_exception", { phase, ...safeErrorDetails(error, token) });
         // 不輸出原始回應或 Token，保留上一份有效資料。
         const reason = phase === "json" ? "invalid_json" : phase === "schema" ? "invalid_schema" : phase === "storage" ? "storage_error" : error?.name === "TimeoutError" ? "timeout" : "network_error";
         return Response.json(await this.outcome(reason, { upstreamStatus, durationMs: Date.now() - now }), { status: 502 });
@@ -114,7 +138,14 @@ export default {
     try {
       const response = await stub(env).fetch(new Request("https://internal/refresh", { method: "POST" }));
       const result = await response.json();
-      log("scheduled_finished", { status: response.status, reason: result.reason });
+      log("scheduled_finished", {
+        status: response.status, reason: result.reason,
+        message: result.message || `Clarity 更新失敗：${result.reason}`,
+        sessions: result.sessions, botSessions: result.botSessions,
+        periodHours: result.periodHours, updatedAt: result.updatedAt,
+        recordedAt: result.recordedAt, durationMs: result.durationMs,
+        upstreamStatus: result.upstreamStatus, nextEligibleAt: result.nextEligibleAt,
+      });
       if (!response.ok) throw new Error(`Clarity scheduled update failed: ${result.reason}`);
     } catch (error) {
       log("scheduled_failed");

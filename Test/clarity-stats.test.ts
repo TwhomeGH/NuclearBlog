@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import worker, { ClarityStats, summarize } from "../workers/clarity-stats/index.mjs";
+import worker, { ClarityStats, summarize, safeErrorDetails } from "../workers/clarity-stats/index.mjs";
 
 function setup() {
   const data = new Map();
@@ -8,13 +8,63 @@ function setup() {
     storage: { get: async (key: string) => data.get(key), put: async (key: string, value: unknown) => { data.set(key, value); } },
     blockConcurrencyWhile: (fn: () => Promise<unknown>) => { const result = queue.then(fn); queue = result.then(() => {}); return result; },
   };
-  return { data, object: new ClarityStats(state, { CLARITY_API_TOKEN: "test-token" }) };
+  return { data, object: new ClarityStats(state, { CLARITY_API_TOKEN: "test.token.signature" }) };
 }
 const refresh = () => new Request("https://internal/refresh", { method: "POST" });
 const payload = [{ metricName: "Traffic", information: [{ totalSessionCount: "10", totalBotSessionCount: "2" }] }];
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe("Clarity export quota and public snapshot", () => {
+  it("logs persisted totals and distinguishes a skipped scheduled update", async () => {
+    const { object, data } = setup();
+    const logger = vi.spyOn(console, "log").mockImplementation(() => {});
+    const fetcher = vi.fn().mockResolvedValue(Response.json(payload));
+    vi.stubGlobal("fetch", fetcher);
+    const env = { STATS: { idFromName: () => "fixed", get: () => object } };
+    const event = { cron: "17 */6 * * *", scheduledTime: Date.now() };
+    await worker.scheduled(event, env);
+    const logs = () => logger.mock.calls.map(([line]) => JSON.parse(line));
+    const expected = {
+      reason: "updated", sessions: 10, botSessions: 2, periodHours: 72,
+      updatedAt: data.get("snapshot").updatedAt,
+      nextEligibleAt: new Date(data.get("nextAttempt")).toISOString(), upstreamStatus: 200,
+    };
+    expect(logs().find(row => row.event === "refresh_result")).toMatchObject(expected);
+    expect(logs().find(row => row.event === "scheduled_finished")).toMatchObject(expected);
+    expect(data.get("diagnostics").message).toContain("期間總數，非本次新增");
+    logger.mockClear();
+    await worker.scheduled(event, env);
+    const skipped = logs().find(row => row.event === "scheduled_finished");
+    expect(skipped).toMatchObject({ reason: "cooldown", nextEligibleAt: expected.nextEligibleAt });
+    expect(skipped.sessions).toBeUndefined();
+    expect(logs().some(row => row.event === "refresh_result")).toBe(false);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(logs())).not.toContain("test.token.signature");
+  });
+  it("rejects malformed credentials without spending upstream quota", async () => {
+    const { object, data } = setup();
+    object.env.CLARITY_API_TOKEN = "Bearer pasted-token";
+    const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
+    expect((await (await object.fetch(refresh())).json()).reason).toBe("invalid_token_format");
+    expect(data.has("nextAttempt")).toBe(false);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+  it("trims token boundaries and reports redirects without following them", async () => {
+    const { object } = setup();
+    object.env.CLARITY_API_TOKEN = " test.token.signature\n";
+    const fetcher = vi.fn().mockResolvedValue(new Response(null, { status: 302, headers: { Location: "https://other.example" } }));
+    vi.stubGlobal("fetch", fetcher);
+    expect((await (await object.fetch(refresh())).json()).reason).toBe("upstream_redirect");
+    expect(fetcher.mock.calls[0][1].headers.Authorization).toBe("Bearer test.token.signature");
+    expect(fetcher.mock.calls[0][1].redirect).toBe("manual");
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+  it("redacts credentials from error details and retains transport error codes", () => {
+    const error = new Error("failed test.token.signature", { cause: { code: "ENOTFOUND" } });
+    const details = safeErrorDetails(error, "test.token.signature");
+    expect(details.errorMessage).not.toContain("test.token.signature");
+    expect(details.causeCode).toBe("ENOTFOUND");
+  });
   it("returns empty cache as a readable state and identifies pre-diagnostics attempts", async () => {
     const { object, data } = setup();
     data.set("nextAttempt", Date.now() + 3600000);
